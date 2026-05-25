@@ -1,0 +1,27 @@
+{
+  "name": "prowodo-tasks",
+  "version": "0.1.0",
+  "description": "Manage ProWoDo tasks, backlog, sprints and Daily Resumes from Claude Code. Auto-triggers on task/planning mentions; uses the ProWoDo MCP server.",
+  "author": {
+    "name": "i3idea",
+    "email": "hello@prowodo.com",
+    "url": "https://prowodo.com"
+  },
+  "license": "MIT",
+  "homepage": "https://prowodo.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/i3idea/claude-plugins.git",
+    "directory": "prowodo-tasks"
+  },
+  "keywords": [
+    "prowodo",
+    "tasks",
+    "planning",
+    "sprint",
+    "scrum",
+    "mcp",
+    "anthropic",
+    "claude"
+  ]
+}

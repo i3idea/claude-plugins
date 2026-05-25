@@ -1,0 +1,16 @@
+{
+  "name": "i3idea",
+  "owner": {
+    "name": "i3idea",
+    "email": "hello@prowodo.com",
+    "url": "https://prowodo.com"
+  },
+  "plugins": [
+    {
+      "name": "prowodo-tasks",
+      "source": "./prowodo-tasks",
+      "description": "Manage ProWoDo tasks, backlog, sprints and Daily Resumes from Claude Code. Auto-triggers on task/planning mentions; uses the ProWoDo MCP server.",
+      "version": "0.1.0"
+    }
+  ]
+}
