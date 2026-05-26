@@ -52,6 +52,30 @@ Non esiste un tool di ricerca separato — tutto passa da `list_tasks` con param
 ### "Aggiungi un task" / "Segna che devo fare X"
 Usa `mcp__prowodo__create_tasks`. Chiedi il progetto se non specificato.
 
+### "Assegna X a Y" / "Chi è assegnato a Z?"
+
+**Disponibile dal backend `8489763` (2026-05-26) / `@prowodo/angular-client@1.2.0`.**
+
+Per assegnare un task a un utente:
+
+1. Risolvi il nome utente in `user_id` con `mcp__prowodo__list_users` (path param: `company_id`). Lo viewset supporta search via `search_fields` su email/username/first_name/last_name/display_name/identity_email — passa la stringa di ricerca come parametro `search` se l'utente cita un nome libero ("Ivan").
+2. Chiama `mcp__prowodo__task_assign_user` con `pk=<task_id>` e `body={"user_id": <id>}`. È **idempotente** — chiamarlo due volte non crea duplicati né errore.
+3. Per rimuovere: `mcp__prowodo__task_unassign_user` con stesso shape. Ritorna `{"unassigned": true|false}`. **Noop-safe** — chiamarlo su un'assegnazione che non esiste non solleva errore.
+
+**Sicurezza:** il backend rifiuta con 400 se `user_id` punta a un utente NON membro della company del task (cross-tenant). Niente leak.
+
+**Per vedere chi è assegnato a un task:** il `Task` serializer espone già la lista degli assegnatari nel campo `users`/`task_assignements` — basta `retrieve_tasks(pk=<id>)`. Non serve una chiamata separata.
+
+Esempio flow tipico — "Assegna il task #1234 a Ivan":
+```
+1. list_users(company_id=1, search="Ivan")
+   → [{id: 42, display_name: "Ivan Bettarini", ...}]
+2. task_assign_user(pk=1234, body={user_id: 42})
+   → 201 {id: ..., task_id: 1234, user_id: 42}
+```
+
+Se la search ritorna più match, mostrali all'utente e chiedi disambiguazione prima di assegnare.
+
 ### "Ho finito X" / "Segna come completato"
 Usa `mcp__prowodo__partial_update_tasks` con questi campi insieme: `is_completed: true, progress: 100, status: "DONE"`. Il backend tratta i tre "segnali done" come invariante (vedi `Task.save()` in `core.models`) — settandone uno solo, gli altri vengono comunque sincronizzati, ma esplicitare tutti e tre rende l'intent chiaro e indipendente da future modifiche al backend.
 
@@ -143,6 +167,10 @@ Quando l'utente chiede "cosa hai fatto?" o "aggiorna i task", aggiorna i task Pr
 | Riordina root | `mcp__prowodo__reorder_root_tasks` |
 | Aggiungi tag | `mcp__prowodo__add_tag_tasks` |
 | Sotto-task (indent) | `mcp__prowodo__increse_depth_tasks` / `mcp__prowodo__decrese_depth_tasks` |
+| Lista utenti company | `mcp__prowodo__list_users` (path: `company_id`, supporta `search`) |
+| Dettaglio utente | `mcp__prowodo__retrieve_users` |
+| Assegna utente a task | `mcp__prowodo__task_assign_user` (`pk` + `body.user_id`, idempotente) |
+| Rimuovi utente da task | `mcp__prowodo__task_unassign_user` (`pk` + `body.user_id`, noop-safe) |
 
 ## Parametri minimi per creare un task
 
