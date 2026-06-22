@@ -120,7 +120,7 @@ Quando crei o aggiorni un task **consiglia** (senza imporlo) la stima in story_p
 - `13+` → **troppo grande**, da decomporre
 
 **Cap di decomposizione** (default sensato, override-abile dall'utente):
-- Se un task ha `story_points >= 8` → suggerisci di **spezzarlo in sotto-task** ognuno ≤ 5 punti, usando `create_tasks` con `parent_id` e/o `increse_depth_tasks`.
+- Se un task ha `story_points >= 8` → suggerisci di **spezzarlo in sotto-task** ognuno ≤ 5 punti, usando `create_tasks` con `parent_id` e/o `increase_depth_tasks`.
 - Somma indicativa dei figli ≈ stima del padre (non vincolante, è una sanity check).
 - Per task root rimasti senza stima dopo la conversazione, **non bloccare** l'utente: crea il task lo stesso e segnala "valuta se aggiungere story_points".
 
@@ -166,7 +166,7 @@ Quando l'utente chiede "cosa hai fatto?" o "aggiorna i task", aggiorna i task Pr
 | Sposta in progetto | `mcp__prowodo__move_to_project_tasks` |
 | Riordina root | `mcp__prowodo__reorder_root_tasks` |
 | Aggiungi tag | `mcp__prowodo__add_tag_tasks` |
-| Sotto-task (indent) | `mcp__prowodo__increse_depth_tasks` / `mcp__prowodo__decrese_depth_tasks` |
+| Sotto-task (indent) | `mcp__prowodo__increase_depth_tasks` / `mcp__prowodo__decrease_depth_tasks` |
 | Lista utenti company | `mcp__prowodo__list_users` (path: `company_id`, supporta `search`) |
 | Dettaglio utente | `mcp__prowodo__retrieve_users` |
 | Assegna utente a task | `mcp__prowodo__task_assign_user` (`pk` + `body.user_id`, idempotente) |

@@ -1,6 +1,6 @@
 {
   "name": "prowodo-tasks",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Manage ProWoDo tasks, backlog, sprints and Daily Resumes from Claude Code. Auto-triggers on task/planning mentions; uses the ProWoDo MCP server.",
   "author": {
     "name": "i3idea",
