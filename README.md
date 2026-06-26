@@ -28,7 +28,7 @@ In Claude Code:
 The skill drives the ProWoDo MCP server. If you don't already have it connected, add it once:
 
 ```
-/mcp add https://backend.prowodo.com/mcp/
+claude mcp add --transport http prowodo https://backend.prowodo.com/mcp/
 ```
 
 ProWoDo's MCP server supports OAuth 2.0 Dynamic Client Registration — your Claude Code session will open a browser to grant access, no manual API key handling. See the [MCP setup blog post](https://prowodo.com/it/blog/configurare-mcp-clients) for client-specific tips (Claude Desktop, Cursor, Windsurf, ChatGPT, Gemini, Cline, etc.).
