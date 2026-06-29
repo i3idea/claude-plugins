@@ -79,9 +79,22 @@ releases) `commit_sha` — which you use to anchor the next `commit_range`.
   projects (with their active services).
 - `list_services({"body": {}})` — services in the org (each has `project`, `slug`,
   `valid_envs`).
-- `create_projects({"body": {slug, title, description}})` — create a project (rare;
-  usually projects already exist).
+- `create_projects({"body": {slug, title, description, organization?}})` — create a
+  project (rare; usually projects already exist). `organization` (slug) is optional:
+  omit it for an API key or a single-org OAuth user (resolved automatically);
+  **required** for a multi-org OAuth user (it's the one tool with no parent to imply
+  the org). Passing an org you don't belong to → 403.
 - `create_services({"body": {slug, project, display_name, repo_url, valid_envs}})` —
-  create a service (rare).
+  create a service (rare). Org is implied by `project`.
 
 If a project or service doesn't exist yet, create it first, then the releases.
+
+## Organization resolution
+
+You never pass an org on the release tools — it's resolved from the principal:
+- **API key** → the key's single org.
+- **OAuth** → your `OrganizationMembership`(s). Single membership → that org;
+  multiple → `list_*` span them all (filter client-side by slug) and the org is
+  inferred from the `project`/`service` slug. Bundled `service_releases` in a
+  `create_project_releases` call **must belong to the same org as the project**
+  (cross-org bundling is rejected).

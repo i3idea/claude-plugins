@@ -26,18 +26,29 @@ ProjectRelease that bundles them.
 This skill calls i3deploy MCP tools (`list_*`, `retrieve_*`, `create_*`). If those
 tools are not available in your session, **stop and set up the connector** — do
 not fall back to curl (the MCP exists precisely so releases aren't hand-rolled
-HTTP):
+HTTP). Two ways to connect, depending on the client:
 
-```
-claude mcp add --transport http i3deploy https://i3deploy-back.i3idea.com/mcp/ \
-  --header "Authorization: Bearer <KEY>"
-```
+- **Claude Code (API key):**
+  ```
+  claude mcp add --transport http i3deploy https://i3deploy-back.i3idea.com/mcp/ \
+    --header "Authorization: Bearer <KEY>"
+  ```
+  `<KEY>` is the org's i3deploy API key — in a wired client repo it's already in the
+  gitignored `.env.i3deploy` (`I3DEPLOY_API_KEY=...`). **One key = one org.**
+- **claude.ai (OAuth):** Settings → Connectors → Add custom connector → URL
+  `https://i3deploy-back.i3idea.com/mcp/`. The browser OAuth flow signs you in; the
+  org(s) come from your account's memberships.
 
-The `<KEY>` is the org's i3deploy API key. In a wired client repo it's already in
-the gitignored `.env.i3deploy` (`I3DEPLOY_API_KEY=...`); read it from there. **One
-key = one org** — releases are created in that key's organization (org `i3` covers
-pwd / i3school / i3deploy; org `hg` is hoopygang). Tell the user which org you're
-about to write to so there's no cross-org surprise.
+**Which org a release lands in:**
+- API key → that key's single org (org `i3` covers pwd / i3school / i3deploy; org
+  `hg` is hoopygang).
+- OAuth → your org membership(s). If you belong to **multiple** orgs, `list_*`
+  span all of them (filter results by slug), and the target org is inferred from
+  the `project`/`service` slug you pick — except `create_projects`, which then
+  needs an explicit `organization` (see `references/mcp-tools.md`).
+
+Always tell the user which org you're about to write to, so there's no cross-org
+surprise.
 
 > **Argument envelope:** i3deploy MCP tools wrap their arguments under a `body`
 > key. Always call them as `create_service_releases({"body": {...}})`,
