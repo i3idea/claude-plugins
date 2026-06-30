@@ -63,6 +63,14 @@ surprise.
   use already exists, don't try to create it; show the latest and propose the next
   semver bump instead. This also gives you the previous release's `commit_sha`,
   which anchors the new git range.
+- **No releases yet → this is the FIRST release.** If the filtered list is empty
+  for this service/project, don't get stuck looking for a "latest": say so and
+  **propose creating the initial release**. Default to **`0.1.0`** (or `1.0.0` if
+  the user says it's production-ready) — confirm with the user. With no previous
+  release there's no `commit_sha` anchor: use the **whole history** as the range
+  (`<first-commit>..HEAD`, e.g. `git rev-list --max-parents=0 HEAD` for the root,
+  or just omit `commit_range`) and draft the changelog from the full history +
+  session + memory + tasks.
 - **Draft, then gate.** You compose the changelog; the human owns the final call.
   Never create silently — confirm the version and show the full payload before
   every `create_*` (creation is a write).
@@ -102,7 +110,8 @@ Synthesize, don't dump: a changelog is a curated story, not a commit log paste.
 2. `list_service_releases({"body": {}})` → it returns the org's service releases
    (no server-side filter in phase 1), so **filter the result by your `service`
    slug client-side**, then take the highest `version` to find the latest and its
-   `commit_sha`. (Dedup + range anchor.)
+   `commit_sha`. (Dedup + range anchor.) **If none match this service → first
+   release** (see Core principles): propose `0.1.0`/`1.0.0` and use the full history.
 3. Build `commit_range` (`<latest sha>..HEAD`) and gather the four sources
    (Step 1). Draft `changelog_markdown` (**technical**, markdown), and — when the
    change is user-visible — `markdown_users` (**user-facing**, plain language);
@@ -129,7 +138,8 @@ Synthesize, don't dump: a changelog is a curated story, not a commit log paste.
    Aggregate from the bundled service releases + the Step 1 sources. Draft a
    `title` and a short `short`.
 4. `list_project_releases({"body": {}})` (filter the result by your `project` slug
-   client-side) for dedup → **gate** on
+   client-side) for dedup — **if none for this project, it's the first project
+   release** (propose `0.1.0`/`1.0.0`) → **gate** on
    `version_numeric` (bump) and on the user-vs-technical split (this split is the
    whole point of a ProjectRelease — get the human's sign-off on it).
 5. Show the final payload, confirm, then create:
