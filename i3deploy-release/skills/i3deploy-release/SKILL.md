@@ -107,11 +107,12 @@ Synthesize, don't dump: a changelog is a curated story, not a commit log paste.
 
 1. Read `i3version/deploy.json` in the repo root → `service`, `base_url`, and the
    env. The org comes from the connector's key.
-2. `list_service_releases({"body": {}})` → it returns the org's service releases
-   (no server-side filter in phase 1), so **filter the result by your `service`
-   slug client-side**, then take the highest `version` to find the latest and its
-   `commit_sha`. (Dedup + range anchor.) **If none match this service → first
-   release** (see Core principles): propose `0.1.0`/`1.0.0` and use the full history.
+2. `list_service_releases({"body": {}})` → returns a **paginated object**; read the
+   rows from **`.results`** (no server-side filter in phase 1), so **filter
+   `.results` by your `service` slug client-side**, then take the highest `version`
+   to find the latest and its `commit_sha`. (Dedup + range anchor.) **If `.results`
+   has none for this service → first release** (see Core principles): propose
+   `0.1.0`/`1.0.0` and use the full history.
 3. Build `commit_range` (`<latest sha>..HEAD`) and gather the four sources
    (Step 1). Draft `changelog_markdown` (**technical**, markdown), and — when the
    change is user-visible — `markdown_users` (**user-facing**, plain language);
@@ -137,9 +138,9 @@ Synthesize, don't dump: a changelog is a curated story, not a commit log paste.
      details.
    Aggregate from the bundled service releases + the Step 1 sources. Draft a
    `title` and a short `short`.
-4. `list_project_releases({"body": {}})` (filter the result by your `project` slug
-   client-side) for dedup — **if none for this project, it's the first project
-   release** (propose `0.1.0`/`1.0.0`) → **gate** on
+4. `list_project_releases({"body": {}})` (paginated — filter **`.results`** by your
+   `project` slug client-side) for dedup — **if `.results` has none for this
+   project, it's the first project release** (propose `0.1.0`/`1.0.0`) → **gate** on
    `version_numeric` (bump) and on the user-vs-technical split (this split is the
    whole point of a ProjectRelease — get the human's sign-off on it).
 5. Show the final payload, confirm, then create:

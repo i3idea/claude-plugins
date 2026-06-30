@@ -12,14 +12,20 @@ project_releases}` plus `{list,create}_services`. The four you need for releases
 are documented below; the project/service create+list tools are summarized at the
 end.
 
-## Important: list tools are org-wide (no server-side filter yet)
+## Important: list tools are PAGINATED + org-wide (no server-side filter yet)
 
-Phase 1 viewsets have no `django-filter` FilterSet, so the `list_*` tools return
-**all** rows in the org. There is **no working `service`/`project` body filter** on
-the list tools. To find "the latest release of service X", call the list tool and
-**filter the returned array client-side** by the `service`/`project` slug, then
-pick the highest `version` / `version_numeric`. (The REST `?project=` query param
-exists for `project-releases` but is not exposed through MCP in phase 1.)
+The `list_*` tools return a **paginated object**, not a bare array:
+`{"count": N, "page_size": 25, "max_page_size": 100, "pages": P, "links": {...}, "results": [ ... ]}`.
+**Read the rows from `.results`** (in both `structuredContent` and the parsed
+`content[0].text`). Use `?page` / `?page_size` (max 100) if you need more than the
+first page — pass them in the `body`, e.g. `{"body": {"page_size": 100}}`.
+
+There is no `service`/`project` body filter yet, so to find "the latest release of
+service X", read `.results`, **filter client-side** by the `service`/`project`
+slug, then pick the highest `version` / `version_numeric`. **If `.results` is empty
+for that service/project → it's the first release** (propose `0.1.0`/`1.0.0`).
+(The REST `?project=` query param exists for `project-releases` but isn't exposed
+through MCP in phase 1.)
 
 `retrieve_*` look up a single row by its id:
 - `retrieve_service_releases` → `{"body": {"id": <pk>}}`

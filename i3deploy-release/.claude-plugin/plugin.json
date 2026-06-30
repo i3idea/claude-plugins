@@ -1,6 +1,6 @@
 {
   "name": "i3deploy-release",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "Cut i3deploy releases from Claude Code — ServiceRelease + ProjectRelease (user-facing & technical changelogs). Drafts notes from git + the current session + memory + your task manager (ProWoDo by default, or another if you use one), dedups against existing versions, and publishes via the i3deploy MCP server. Auto-triggers on release/changelog mentions.",
   "author": {
     "name": "i3idea",
