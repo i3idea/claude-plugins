@@ -104,13 +104,15 @@ Synthesize, don't dump: a changelog is a curated story, not a commit log paste.
    slug client-side**, then take the highest `version` to find the latest and its
    `commit_sha`. (Dedup + range anchor.)
 3. Build `commit_range` (`<latest sha>..HEAD`) and gather the four sources
-   (Step 1). Draft `changelog_markdown` (technical, markdown) and a one-line
-   `short_summary`.
+   (Step 1). Draft `changelog_markdown` (**technical**, markdown), and — when the
+   change is user-visible — `markdown_users` (**user-facing**, plain language);
+   plus a one-line `short_summary`. (A ServiceRelease carries both audiences, like
+   a ProjectRelease; leave `markdown_users` empty for purely internal changes.)
 4. **Gate:** present `latest → proposed` version with the bump rationale; let the
    user adjust the version and edit the notes. Refuse a version that already
    exists.
 5. Show the final payload, get a yes, then create:
-   `create_service_releases({"body": {service, version, commit_sha, commit_range, changelog_markdown, short_summary, authored_by}})`.
+   `create_service_releases({"body": {service, version, commit_sha, commit_range, changelog_markdown, markdown_users, short_summary, authored_by}})`.
 
 ## Step 3 — ProjectRelease (bundle service releases into a product version)
 

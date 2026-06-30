@@ -16,7 +16,7 @@
       "name": "i3deploy-release",
       "source": "./i3deploy-release",
       "description": "Cut i3deploy releases (ServiceRelease + ProjectRelease, user/technical changelogs) from Claude Code or claude.ai. Drafts from git + session + memory + your task manager, dedups, publishes via the i3deploy MCP server (API key or OAuth).",
-      "version": "0.1.1"
+      "version": "0.1.2"
     }
   ]
 }

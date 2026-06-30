@@ -36,9 +36,14 @@ exists for `project-releases` but is not exposed through MCP in phase 1.)
 | `version` | string | yes | semver, e.g. `2.3.0` (unique per service — dedup!) |
 | `commit_sha` | string | yes | the released commit (`HEAD`) |
 | `commit_range` | string | no | e.g. `abc1234..def5678` |
-| `changelog_markdown` | string (markdown) | no | technical changelog |
+| `changelog_markdown` | string (markdown) | no | **technical** changelog |
+| `markdown_users` | string (markdown) | no | **user-facing** notes (mirrors ProjectRelease.markdown_users) |
 | `short_summary` | string | no | one line, ≤256 chars |
 | `authored_by` | `"human"` \| `"ai"` | no | default `human`; set `ai` when drafted by the skill |
+
+> A ServiceRelease now carries BOTH audiences, like a ProjectRelease:
+> `changelog_markdown` (technical) and `markdown_users` (user-facing). Draft both
+> when the change is user-visible; technical-only changes can leave `markdown_users` empty.
 
 Returns the created service release. `version_major/minor/patch` are derived from
 `version` server-side (don't send them).
