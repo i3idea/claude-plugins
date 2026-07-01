@@ -1,6 +1,6 @@
 ---
 name: prowodo-tasks
-description: Use this skill whenever the user mentions tasks, planning, todo, things to do, work to track, backlog, sprint, story points, scrum, grooming, planning poker, checking what needs to be done, or asks to log/create/manage/plan/review tasks. ProWoDo is the single source of truth for all task management and planning. Trigger on any mention of "segna", "crea task", "aggiungi task", "traccia", "todo", "cose da fare", "planning", "pianifica", "backlog", "sprint", "story point", "punti", "stima", "scrum", "grooming", "cosa c'è da fare", "cosa devo fare", "cosa ho da fare", "dimmi i task", "mostrami i task", "check tasks", "what do I need to do", or equivalent in any language. Also trigger proactively at the end of a working session to suggest logging completed or upcoming work.
+description: Use this skill whenever the user mentions tasks, planning, todo, things to do, work to track, backlog, sprint, story points, scrum, grooming, planning poker, checking what needs to be done, or asks to log/create/manage/plan/review tasks. ProWoDo is the single source of truth for all task management and planning. Trigger on any mention of "segna", "crea task", "aggiungi task", "traccia", "todo", "cose da fare", "planning", "pianifica", "backlog", "sprint", "story point", "punti", "stima", "scrum", "grooming", "cosa c'è da fare", "cosa devo fare", "cosa ho da fare", "dimmi i task", "mostrami i task", "check tasks", "what do I need to do", or equivalent in any language. Trigger also on reminder mentions: "reminder", "promemoria", "ricordami", "ricordarmi", "avvisami", "remind me", "set a reminder", "scadenza". Also trigger proactively at the end of a working session to suggest logging completed or upcoming work.
 ---
 
 # ProWoDo — Task Management & Planning
@@ -75,6 +75,30 @@ Esempio flow tipico — "Assegna il task #1234 a Ivan":
 ```
 
 Se la search ritorna più match, mostrali all'utente e chiedi disambiguazione prima di assegnare.
+
+### "Ricordami X" / "Metti un reminder" / Reminder sui task
+
+**Live in prod dal 2026-07-01.** Ogni task può avere **N reminder** temporizzati, consegnati su più canali (notifica push, email, Telegram). Uno scheduler backend pesca i reminder dovuti ogni minuto, li invia ai destinatari e marca `is_sent`.
+
+- **Creare**: `mcp__prowodo__create_reminders` con `task_id` (path) + body:
+  - `remind_at` — datetime ISO, **obbligatorio** (quando scatta)
+  - `text` — messaggio del reminder
+  - `recipient_id` — opzionale; se omesso i destinatari sono gli **assegnatari correnti del task**. Deve essere un membro della company del task.
+  - `send_push` / `send_email` / `send_telegram` — canali; **almeno uno true** (default: solo push)
+  - `notify_if_completed` — default false; se true parte anche quando il task è già DONE
+- **Listare**: `mcp__prowodo__list_reminders` con `task_id` (ogni reminder espone `is_sent`).
+- **Aggiornare / eliminare**: `mcp__prowodo__partial_update_reminders` / `mcp__prowodo__destroy_reminders`.
+
+Esempio — "ricordami di rivedere questo task domani alle 9":
+```
+create_reminders(task_id=1234, body={
+  "remind_at": "2026-07-02T09:00:00Z",
+  "text": "Rivedi il task",
+  "send_push": true
+})
+```
+
+Consiglia di impostare i reminder quando l'utente dice "ricordami", "avvisami", "metti un promemoria" o cita una scadenza su un task specifico.
 
 ### "Ho finito X" / "Segna come completato"
 Usa `mcp__prowodo__partial_update_tasks` con questi campi insieme: `is_completed: true, progress: 100, status: "DONE"`. Il backend tratta i tre "segnali done" come invariante (vedi `Task.save()` in `core.models`) — settandone uno solo, gli altri vengono comunque sincronizzati, ma esplicitare tutti e tre rende l'intent chiaro e indipendente da future modifiche al backend.
@@ -171,6 +195,10 @@ Quando l'utente chiede "cosa hai fatto?" o "aggiorna i task", aggiorna i task Pr
 | Dettaglio utente | `mcp__prowodo__retrieve_users` |
 | Assegna utente a task | `mcp__prowodo__task_assign_user` (`pk` + `body.user_id`, idempotente) |
 | Rimuovi utente da task | `mcp__prowodo__task_unassign_user` (`pk` + `body.user_id`, noop-safe) |
+| Lista reminder di un task | `mcp__prowodo__list_reminders` (path: `task_id`) |
+| Crea reminder | `mcp__prowodo__create_reminders` (path: `task_id` + body) |
+| Aggiorna reminder | `mcp__prowodo__partial_update_reminders` |
+| Elimina reminder | `mcp__prowodo__destroy_reminders` |
 
 ## Parametri minimi per creare un task
 
