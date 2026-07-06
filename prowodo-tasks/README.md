@@ -25,7 +25,7 @@ mentions in any language and routes work through the ProWoDo MCP server.
 ## Prerequisite — connect the ProWoDo MCP server
 
 ```
-claude mcp add --transport http prowodo https://backend.prowodo.com/mcp/
+claude mcp add --transport http prowodo https://mcp.prowodo.com/mcp/
 ```
 
 ProWoDo's MCP server supports OAuth 2.0 Dynamic Client Registration — your first

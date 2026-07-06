@@ -30,13 +30,13 @@ HTTP). Two ways to connect, depending on the client:
 
 - **Claude Code (API key):**
   ```
-  claude mcp add --transport http i3deploy https://i3deploy-back.i3idea.com/mcp/ \
+  claude mcp add --transport http i3deploy https://mcp.i3deploy.com/mcp/ \
     --header "Authorization: Bearer <KEY>"
   ```
   `<KEY>` is the org's i3deploy API key — in a wired client repo it's already in the
   gitignored `.env.i3deploy` (`I3DEPLOY_API_KEY=...`). **One key = one org.**
 - **claude.ai (OAuth):** Settings → Connectors → Add custom connector → URL
-  `https://i3deploy-back.i3idea.com/mcp/`. The browser OAuth flow signs you in; the
+  `https://mcp.i3deploy.com/mcp/`. The browser OAuth flow signs you in; the
   org(s) come from your account's memberships.
 
 **Which org a release lands in:**

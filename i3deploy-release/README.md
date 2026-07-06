@@ -29,7 +29,7 @@ i3deploy MCP server.
 ## Prerequisite — connect the i3deploy MCP server
 
 ```
-claude mcp add --transport http i3deploy https://i3deploy-back.i3idea.com/mcp/ \
+claude mcp add --transport http i3deploy https://mcp.i3deploy.com/mcp/ \
   --header "Authorization: Bearer <YOUR_I3DEPLOY_API_KEY>"
 ```
 

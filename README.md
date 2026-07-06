@@ -28,7 +28,7 @@ In Claude Code:
 The skill drives the ProWoDo MCP server. If you don't already have it connected, add it once:
 
 ```
-claude mcp add --transport http prowodo https://backend.prowodo.com/mcp/
+claude mcp add --transport http prowodo https://mcp.prowodo.com/mcp/
 ```
 
 ProWoDo's MCP server supports OAuth 2.0 Dynamic Client Registration — your Claude Code session will open a browser to grant access, no manual API key handling. See the [MCP setup blog post](https://prowodo.com/it/blog/configurare-mcp-clients) for client-specific tips (Claude Desktop, Cursor, Windsurf, ChatGPT, Gemini, Cline, etc.).
@@ -69,7 +69,7 @@ Cut **i3deploy** releases from Claude Code — `ServiceRelease` (one service's v
 **Prerequisite — connect the i3deploy MCP server:**
 
 ```
-claude mcp add --transport http i3deploy https://i3deploy-back.i3idea.com/mcp/ \
+claude mcp add --transport http i3deploy https://mcp.i3deploy.com/mcp/ \
   --header "Authorization: Bearer <YOUR_I3DEPLOY_API_KEY>"
 ```
 

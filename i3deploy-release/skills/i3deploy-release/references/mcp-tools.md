@@ -1,6 +1,6 @@
 # i3deploy MCP tools — field reference (phase 1)
 
-Endpoint: `POST https://i3deploy-back.i3idea.com/mcp/` (Streamable HTTP).
+Endpoint: `POST https://mcp.i3deploy.com/mcp/` (Streamable HTTP).
 Auth: `Authorization: Bearer <org key>`. The organization is implied by the key —
 you never pass an org/company argument.
 
