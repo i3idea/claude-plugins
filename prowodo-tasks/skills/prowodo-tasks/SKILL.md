@@ -1,6 +1,6 @@
 ---
 name: prowodo-tasks
-description: Use this skill whenever the user mentions tasks, planning, todo, things to do, work to track, backlog, sprint, story points, scrum, grooming, planning poker, checking what needs to be done, or asks to log/create/manage/plan/review tasks. ProWoDo is the single source of truth for all task management and planning. Trigger on any mention of "segna", "crea task", "aggiungi task", "traccia", "todo", "cose da fare", "planning", "pianifica", "backlog", "sprint", "story point", "punti", "stima", "scrum", "grooming", "cosa c'è da fare", "cosa devo fare", "cosa ho da fare", "dimmi i task", "mostrami i task", "check tasks", "what do I need to do", or equivalent in any language. Trigger also on reminder mentions: "reminder", "promemoria", "ricordami", "ricordarmi", "avvisami", "remind me", "set a reminder", "scadenza". Also trigger proactively at the end of a working session to suggest logging completed or upcoming work.
+description: Use this skill whenever the user mentions tasks, planning, todo, things to do, work to track, backlog, sprint, story points, scrum, grooming, planning poker, checking what needs to be done, or asks to log/create/manage/plan/review tasks. ProWoDo is the single source of truth for all task management and planning. Trigger on any mention of "segna", "crea task", "aggiungi task", "traccia", "todo", "cose da fare", "planning", "pianifica", "backlog", "sprint", "story point", "punti", "stima", "scrum", "grooming", "cosa c'è da fare", "cosa devo fare", "cosa ho da fare", "dimmi i task", "mostrami i task", "check tasks", "what do I need to do", or equivalent in any language. Trigger also on reminder mentions like "reminder", "promemoria", "ricordami", "ricordarmi", "avvisami", "remind me", "set a reminder", "scadenza". Also trigger proactively at the end of a working session to suggest logging completed or upcoming work.
 ---
 
 # ProWoDo — Task Management & Planning
@@ -151,6 +151,30 @@ Quando crei o aggiorni un task **consiglia** (senza imporlo) la stima in story_p
 **Quando NON insistere sui punti:**
 - Task amministrativi/operativi rapidi (inviare email, prenotare call): l'overhead di stimarli supera il valore
 - L'utente ha già detto che non usa stime su quel progetto (rispetta il default in memoria, vedi sotto)
+
+## Prioritizzazione ICE / RICE
+
+Oltre agli story point (dimensione), ProWoDo espone i campi per prioritizzare il backlog con **ICE** e **RICE**. Sono i campi giusti quando l'utente chiede "usa ICE per priorità", "riordina per priorità", "cosa faccio prima", o vuole un ordine oggettivo invece del campo `priority` (spesso lasciato al default MEDIUM e quindi poco discriminante).
+
+**Campi (settabili in `create_tasks` / `partial_update_tasks`):**
+
+| Campo | Range | Significato |
+|-------|-------|-------------|
+| `impact` | 1–5 | Quanto muove l'ago (valore per utente/business) |
+| `confidence` | 0–100 | Quanto sei sicuro dell'impatto / quanto è compreso il lavoro (%) |
+| `effort` | 1–5 | Sforzo/costo. **Più alto = punteggio più basso** |
+| `reach` | 0–N | Solo RICE: quante persone/eventi tocca in un periodo |
+
+**Punteggi calcolati dal backend (read-only nella response):**
+- `ice_score = impact × (confidence / 100) ÷ effort` — verificato (es. `i2 c85 e1` → `1.7`).
+- `rice_score = reach × impact × (confidence / 100) ÷ effort` — formula RICE standard; valorizzato solo se `reach` è settato.
+
+**Come usarli:**
+1. Quando crei/aggiorni task di prodotto **consiglia** di valorizzare `impact` / `confidence` / `effort` (e `reach` se l'utente ragiona per volume → RICE). Per task operativi rapidi non insistere, come per gli story point.
+2. Per prioritizzare: leggi i task con `list_tasks`, ordina per `ice_score` (o `rice_score`) decrescente e proponi quell'ordine. Per **persistere** l'ordine nella board usa `partial_update_tasks(order=i)` **in serie top-down** (0,1,2,...) — vedi il gotcha "reorder renormalize" più sotto.
+3. `story_points` (dimensione) ed ICE/RICE (priorità) sono ortogonali: un task può essere piccolo ma a bassa priorità e viceversa. Non confonderli.
+
+**⚠️ Limite noto dell'ICE — segnalalo sempre prima di riordinare la board alla lettera:** l'ICE premia i task *cheap* (effort basso) e penalizza i *bet strategici* ad alto effort. Un tech-debt da 5 minuti può superare in punteggio il gate di pagamento / il lancio. Quando l'utente vuole riordinare per ICE, **proponi di "pinnare" manualmente in cima i 2-3 bet strategici** (monetizzazione, lancio, blocco critico) e ordinare per ICE tutto il resto, invece di applicare l'ICE puro. RICE mitiga in parte il problema introducendo `reach`, ma non lo elimina.
 
 ## Sprint / Scrum (opzionale, non obbligatorio)
 

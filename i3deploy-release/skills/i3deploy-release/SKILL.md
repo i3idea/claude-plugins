@@ -1,7 +1,6 @@
 ---
 name: i3deploy-release
 description: Create and publish i3deploy releases — ServiceRelease (one service's version + changelog) and ProjectRelease (a project version that bundles service releases, with user-facing and technical changelogs). Use this skill whenever the user wants to cut, publish, draft, or record a release or changelog for an i3idea/i3deploy-tracked project or service — e.g. "nuova release", "rilascia pwd-backend", "pubblica una release di i3school", "crea la project release", "changelog di rilascio", "facciamo una release", "bump version and release", or /i3deploy-release. Trigger even when the user doesn't say "i3deploy" explicitly, as long as they're cutting a release in a repo that has an i3version/deploy.json. Drafts the changelog from git + the current session + memory + ProWoDo tasks, dedups against existing releases, and creates everything through the i3deploy MCP tools after your confirmation.
-trigger: /i3deploy-release
 ---
 
 # i3deploy — Release Population
