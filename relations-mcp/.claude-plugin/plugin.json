@@ -1,0 +1,27 @@
+{
+  "name": "relations-mcp",
+  "version": "0.1.0",
+  "description": "Guida ai tool MCP di Relation (Hoopygang) per influencer, campagne e audience analytics. Auto-trigger su domande su influencer/campagne/deal/organizations; usa il server MCP di Relation.",
+  "author": {
+    "name": "i3idea",
+    "email": "hello@prowodo.com",
+    "url": "https://prowodo.com"
+  },
+  "license": "MIT",
+  "homepage": "https://hoopygang.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/i3idea/claude-plugins.git",
+    "directory": "relations-mcp"
+  },
+  "keywords": [
+    "relations",
+    "hoopygang",
+    "influencer",
+    "campaigns",
+    "analytics",
+    "mcp",
+    "anthropic",
+    "claude"
+  ]
+}

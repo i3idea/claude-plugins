@@ -75,6 +75,30 @@ claude mcp add --transport http i3deploy https://mcp.i3deploy.com/mcp/ \
 
 The key authenticates one organization; in a wired client repo it's already in the gitignored `.env.i3deploy`.
 
+---
+
+### `relations-mcp`
+
+Guidance skill for the **Relation** (Hoopygang) MCP tools — influencer, campaign and audience analytics — from Claude Code or claude.ai. No bundled MCP transport: the connector is configured on claude.ai via OAuth.
+
+**What it does:**
+- Detects when you ask about Relation influencers, campaigns, deals, organizations, or audience/demographic analytics (IT / EN / mixed)
+- Loads a workflow guide for the read-only tools: `list_campaigns`/`retrieve_campaigns`, `list_influencers`/`retrieve_influencers`, `list_organizations`/`retrieve_organizations`, `lookup_influencer`, `get_influencer_audience`
+- Documents the constraints: everything read-only, no paid-provider calls (no HypeAuditor/Apify refresh), results scoped by `organization`
+
+**Install:**
+
+```
+/plugin marketplace add https://github.com/i3idea/claude-plugins
+/plugin install relations-mcp@i3idea
+```
+
+**Prerequisite — connect the Relation MCP server:**
+
+On claude.ai, add a custom connector pointed at `https://mcp.hoopygang.com/mcp/` and authenticate via the OAuth flow (Firebase login). Requires an `is_dev` account with the per-service access flag enabled for Relation.
+
+> **Preview:** the connector goes live once the OAuth connector and per-service access flag are deployed to production; the skill itself is ready to use today.
+
 ## License
 
 MIT — see [LICENSE](./LICENSE).

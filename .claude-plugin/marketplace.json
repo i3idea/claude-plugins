@@ -17,6 +17,12 @@
       "source": "./i3deploy-release",
       "description": "Cut i3deploy releases (ServiceRelease + ProjectRelease, user/technical changelogs) from Claude Code or claude.ai. Drafts from git + session + memory + your task manager, dedups, publishes via the i3deploy MCP server (API key or OAuth).",
       "version": "0.1.4"
+    },
+    {
+      "name": "relations-mcp",
+      "source": "./relations-mcp",
+      "description": "Guida ai tool MCP di Relation (Hoopygang) per influencer, campagne e audience analytics. Auto-trigger su domande su influencer/campagne/deal/organizations; usa il server MCP di Relation.",
+      "version": "0.1.0"
     }
   ]
 }
