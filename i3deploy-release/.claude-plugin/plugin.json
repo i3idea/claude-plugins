@@ -1,6 +1,6 @@
 {
   "name": "i3deploy-release",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Cut i3deploy releases from Claude Code — ServiceRelease + ProjectRelease (user-facing & technical changelogs). Drafts notes from git + the current session + memory + your task manager (ProWoDo by default, or another if you use one), dedups against existing versions, and publishes via the i3deploy MCP server. Auto-triggers on release/changelog mentions.",
   "author": {
     "name": "i3idea",
@@ -9,11 +9,7 @@
   },
   "license": "MIT",
   "homepage": "https://prowodo.com",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/i3idea/claude-plugins.git",
-    "directory": "i3deploy-release"
-  },
+  "repository": "https://github.com/i3idea/claude-plugins.git",
   "keywords": [
     "i3deploy",
     "release",
