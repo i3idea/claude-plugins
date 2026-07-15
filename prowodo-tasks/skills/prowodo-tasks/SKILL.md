@@ -26,9 +26,9 @@ controllo della skill:
 | Connector claude.ai | `mcp__claude_ai_Prowodo__list_tasks` |
 
 **Non assumere un prefisso: guarda i tool effettivamente disponibili in sessione e
-usa quello che finisce col nome giusto.** Il plugin include il server ProWoDo, quindi
-di norma i tool ci sono già; se l'utente lo aveva anche connesso a mano potresti
-vedere **due set equivalenti** — usane uno solo e resta coerente per tutta la sessione.
+usa quello che finisce col nome giusto.** Se una stessa installazione ha più di una
+di queste connessioni attive, vedrai **due set equivalenti** di tool — usane uno solo
+e resta coerente per tutta la sessione.
 
 Se non trovi **nessun** tool ProWoDo, il server non è autenticato: di' all'utente di
 lanciare `/mcp` e completare il login OAuth nel browser. Non ripiegare su `curl`.
