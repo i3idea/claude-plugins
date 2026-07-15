@@ -36,18 +36,26 @@ OAuth 2.0 Dynamic Client Registration, so no API key is ever stored in config.
 Don't have an account? Sign up at [prowodo.com](https://prowodo.com) (free Early
 Access in beta).
 
-**Already connected ProWoDo manually** (`claude mcp add ... prowodo`) or via the
-claude.ai connector? The bundled server is a *separate* registration, so you'd load
-two equivalent tool sets (~65 tools each). Remove the manual one to avoid the
-duplication:
+### Already have ProWoDo connected?
 
-```
-claude mcp remove prowodo
-```
+If you connected it manually (`claude mcp add ... prowodo`) or use the claude.ai
+connector, the bundled server is a *separate* registration — authenticating it too
+would load two equivalent tool sets (~65 tools each). Pick one:
 
-Prefer to keep your own connection and skip the bundled server? Add it to
-`disabledMcpjsonServers` in your settings — the skill works with whichever
-ProWoDo connection is present.
+- **Switch to the bundled server** — drop your own connection with
+  `claude mcp remove prowodo`, then `/mcp` to log in. If you had allowlisted tool
+  permissions in settings, repoint them at the new prefix
+  (`mcp__plugin_prowodo-tasks_prowodo__*`) or read-only calls will start prompting
+  again.
+- **Keep your own connection** — just **don't authenticate** the bundled server.
+  An unauthenticated server exposes no tools, so it sits inert and the skill uses
+  whichever ProWoDo connection is live. It shows up in `/mcp` as
+  "needs authentication"; that's cosmetic.
+
+There is **no way to keep the skill while disabling the bundled server**:
+`disabledMcpjsonServers` only applies to project `.mcp.json` files, not to
+plugin-bundled servers, and `/plugin disable` removes the skill along with it.
+Leaving it unauthenticated is the supported way to opt out.
 
 ## Usage
 

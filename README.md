@@ -33,7 +33,7 @@ The ProWoDo MCP server **ships with the plugin** — no `claude mcp add` needed.
 
 Pick `prowodo` and complete the browser login. The server supports OAuth 2.0 Dynamic Client Registration, so no API key is ever stored in config. See the [MCP setup blog post](https://prowodo.com/it/blog/configurare-mcp-clients) for other clients (Claude Desktop, Cursor, Windsurf, ChatGPT, Gemini, Cline, etc.), which still connect manually.
 
-If you already had ProWoDo connected by hand, drop it (`claude mcp remove prowodo`) so you don't load the same ~65 tools twice — see the [plugin README](./prowodo-tasks/README.md#authenticate--one-step-no-api-key).
+Already have ProWoDo connected by hand or via the claude.ai connector? Either drop yours (`claude mcp remove prowodo`) and use the bundled server, or simply **don't authenticate** the bundled one — an unauthenticated server exposes no tools, so it stays inert and the skill uses your existing connection. See the [plugin README](./prowodo-tasks/README.md#already-have-prowodo-connected) for the trade-offs.
 
 Don't have a ProWoDo account yet? Sign up at [prowodo.com](https://prowodo.com) — free Early Access while in beta.
 
