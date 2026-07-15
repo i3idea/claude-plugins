@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "prowodo": {
+      "type": "http",
+      "url": "https://mcp.prowodo.com/mcp/"
+    }
+  }
+}

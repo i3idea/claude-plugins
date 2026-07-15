@@ -23,15 +23,17 @@ In Claude Code:
 /plugin install prowodo-tasks@i3idea
 ```
 
-## Prerequisite — connect the ProWoDo MCP server
+## Authenticate — one step, no API key
 
-The skill drives the ProWoDo MCP server. If you don't already have it connected, add it once:
+The ProWoDo MCP server **ships with the plugin** — no `claude mcp add` needed. After installing, run:
 
 ```
-claude mcp add --transport http prowodo https://mcp.prowodo.com/mcp/
+/mcp
 ```
 
-ProWoDo's MCP server supports OAuth 2.0 Dynamic Client Registration — your Claude Code session will open a browser to grant access, no manual API key handling. See the [MCP setup blog post](https://prowodo.com/it/blog/configurare-mcp-clients) for client-specific tips (Claude Desktop, Cursor, Windsurf, ChatGPT, Gemini, Cline, etc.).
+Pick `prowodo` and complete the browser login. The server supports OAuth 2.0 Dynamic Client Registration, so no API key is ever stored in config. See the [MCP setup blog post](https://prowodo.com/it/blog/configurare-mcp-clients) for other clients (Claude Desktop, Cursor, Windsurf, ChatGPT, Gemini, Cline, etc.), which still connect manually.
+
+If you already had ProWoDo connected by hand, drop it (`claude mcp remove prowodo`) so you don't load the same ~65 tools twice — see the [plugin README](./prowodo-tasks/README.md#authenticate--one-step-no-api-key).
 
 Don't have a ProWoDo account yet? Sign up at [prowodo.com](https://prowodo.com) — free Early Access while in beta.
 

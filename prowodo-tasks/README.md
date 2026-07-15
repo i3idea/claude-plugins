@@ -22,15 +22,32 @@ mentions in any language and routes work through the ProWoDo MCP server.
 /plugin install prowodo-tasks@i3idea
 ```
 
-## Prerequisite — connect the ProWoDo MCP server
+## Authenticate — one step, no API key
+
+The ProWoDo MCP server **ships with the plugin**; there's nothing to add by hand.
+After installing, authenticate once:
 
 ```
-claude mcp add --transport http prowodo https://mcp.prowodo.com/mcp/
+/mcp
 ```
 
-ProWoDo's MCP server supports OAuth 2.0 Dynamic Client Registration — your first
-use opens a browser to grant access, no manual API key handling. Don't have an
-account? Sign up at [prowodo.com](https://prowodo.com) (free Early Access in beta).
+Pick `prowodo` and complete the browser login. ProWoDo's MCP server supports
+OAuth 2.0 Dynamic Client Registration, so no API key is ever stored in config.
+Don't have an account? Sign up at [prowodo.com](https://prowodo.com) (free Early
+Access in beta).
+
+**Already connected ProWoDo manually** (`claude mcp add ... prowodo`) or via the
+claude.ai connector? The bundled server is a *separate* registration, so you'd load
+two equivalent tool sets (~65 tools each). Remove the manual one to avoid the
+duplication:
+
+```
+claude mcp remove prowodo
+```
+
+Prefer to keep your own connection and skip the bundled server? Add it to
+`disabledMcpjsonServers` in your settings — the skill works with whichever
+ProWoDo connection is present.
 
 ## Usage
 

@@ -13,10 +13,30 @@ ProWoDo è il sistema centrale per task, planning e backlog. Usalo **sempre** pe
 - Organizzare il lavoro per progetto
 - Tracciare avanzamento (progress %)
 
+## I tool MCP: nomi e prefisso
+
+Questa skill cita i tool con il **nome nudo** (`list_tasks`, `create_tasks`, ...). Il
+prefisso reale **dipende da come il server ProWoDo è connesso** e non è sotto il
+controllo della skill:
+
+| Come è connesso | Nome reale del tool |
+|-----------------|---------------------|
+| MCP incluso nel plugin (default) | `mcp__plugin_prowodo-tasks_prowodo__list_tasks` |
+| `claude mcp add ... prowodo` (manuale) | `mcp__prowodo__list_tasks` |
+| Connector claude.ai | `mcp__claude_ai_Prowodo__list_tasks` |
+
+**Non assumere un prefisso: guarda i tool effettivamente disponibili in sessione e
+usa quello che finisce col nome giusto.** Il plugin include il server ProWoDo, quindi
+di norma i tool ci sono già; se l'utente lo aveva anche connesso a mano potresti
+vedere **due set equivalenti** — usane uno solo e resta coerente per tutta la sessione.
+
+Se non trovi **nessun** tool ProWoDo, il server non è autenticato: di' all'utente di
+lanciare `/mcp` e completare il login OAuth nel browser. Non ripiegare su `curl`.
+
 ## Flusso base
 
 1. **Controlla la memoria di progetto** (`prowodo_defaults.md` nella memory dir corrente — vedi sezione "Defaults di progetto in memoria"). Se esiste, usa company/project/scrum come default.
-2. Altrimenti **lista le company** con `mcp__prowodo__list_companys` e **i progetti** con `mcp__prowodo__list_projects` (passa `company_id`). **Controlla il campo `is_archivied`** (sic, typo backend) su ogni progetto: non proporre progetti archiviati come destinazione e non scriverci task. Se l'unico match è archiviato, segnalalo all'utente e chiedi un'alternativa.
+2. Altrimenti **lista le company** con `list_companys` e **i progetti** con `list_projects` (passa `company_id`). **Controlla il campo `is_archivied`** (sic, typo backend) su ogni progetto: non proporre progetti archiviati come destinazione e non scriverci task. Se l'unico match è archiviato, segnalalo all'utente e chiedi un'alternativa.
 3. Quando hai capito company + project + se l'utente usa scrum, **proponi di salvarlo in memoria** (vedi sezione apposita) per evitare di richiederlo ogni volta.
 4. Agisci in base all'intenzione dell'utente (vedi sezioni sotto).
 
@@ -27,7 +47,7 @@ ProWoDo è il sistema centrale per task, planning e backlog. Usalo **sempre** pe
 ## Scenari d'uso
 
 ### "Cosa c'è da fare?" / Backlog / Planning
-Usa `mcp__prowodo__list_tasks` per mostrare i task aperti del progetto. Presenta in modo leggibile: nome, priorità, progress %, assegnatario se presente.
+Usa `list_tasks` per mostrare i task aperti del progetto. Presenta in modo leggibile: nome, priorità, progress %, assegnatario se presente.
 
 ### "Cerca task su X" / "Ci sono task che riguardano Y?"
 `list_tasks` espone **tre filtri testuali distinti** — usano index diversi, non sono intercambiabili:
@@ -50,7 +70,7 @@ Usa `mcp__prowodo__list_tasks` per mostrare i task aperti del progetto. Presenta
 Non esiste un tool di ricerca separato — tutto passa da `list_tasks` con parametri diversi.
 
 ### "Aggiungi un task" / "Segna che devo fare X"
-Usa `mcp__prowodo__create_tasks`. Chiedi il progetto se non specificato.
+Usa `create_tasks`. Chiedi il progetto se non specificato.
 
 ### "Assegna X a Y" / "Chi è assegnato a Z?"
 
@@ -58,9 +78,9 @@ Usa `mcp__prowodo__create_tasks`. Chiedi il progetto se non specificato.
 
 Per assegnare un task a un utente:
 
-1. Risolvi il nome utente in `user_id` con `mcp__prowodo__list_users` (path param: `company_id`). Lo viewset supporta search via `search_fields` su email/username/first_name/last_name/display_name/identity_email — passa la stringa di ricerca come parametro `search` se l'utente cita un nome libero ("Ivan").
-2. Chiama `mcp__prowodo__task_assign_user` con `pk=<task_id>` e `body={"user_id": <id>}`. È **idempotente** — chiamarlo due volte non crea duplicati né errore.
-3. Per rimuovere: `mcp__prowodo__task_unassign_user` con stesso shape. Ritorna `{"unassigned": true|false}`. **Noop-safe** — chiamarlo su un'assegnazione che non esiste non solleva errore.
+1. Risolvi il nome utente in `user_id` con `list_users` (path param: `company_id`). Lo viewset supporta search via `search_fields` su email/username/first_name/last_name/display_name/identity_email — passa la stringa di ricerca come parametro `search` se l'utente cita un nome libero ("Ivan").
+2. Chiama `task_assign_user` con `pk=<task_id>` e `body={"user_id": <id>}`. È **idempotente** — chiamarlo due volte non crea duplicati né errore.
+3. Per rimuovere: `task_unassign_user` con stesso shape. Ritorna `{"unassigned": true|false}`. **Noop-safe** — chiamarlo su un'assegnazione che non esiste non solleva errore.
 
 **Sicurezza:** il backend rifiuta con 400 se `user_id` punta a un utente NON membro della company del task (cross-tenant). Niente leak.
 
@@ -80,14 +100,14 @@ Se la search ritorna più match, mostrali all'utente e chiedi disambiguazione pr
 
 **Live in prod dal 2026-07-01.** Ogni task può avere **N reminder** temporizzati, consegnati su più canali (notifica push, email, Telegram). Uno scheduler backend pesca i reminder dovuti ogni minuto, li invia ai destinatari e marca `is_sent`.
 
-- **Creare**: `mcp__prowodo__create_reminders` con `task_id` (path) + body:
+- **Creare**: `create_reminders` con `task_id` (path) + body:
   - `remind_at` — datetime ISO, **obbligatorio** (quando scatta)
   - `text` — messaggio del reminder
   - `recipient_id` — opzionale; se omesso i destinatari sono gli **assegnatari correnti del task**. Deve essere un membro della company del task.
   - `send_push` / `send_email` / `send_telegram` — canali; **almeno uno true** (default: solo push)
   - `notify_if_completed` — default false; se true parte anche quando il task è già DONE
-- **Listare**: `mcp__prowodo__list_reminders` con `task_id` (ogni reminder espone `is_sent`).
-- **Aggiornare / eliminare**: `mcp__prowodo__partial_update_reminders` / `mcp__prowodo__destroy_reminders`.
+- **Listare**: `list_reminders` con `task_id` (ogni reminder espone `is_sent`).
+- **Aggiornare / eliminare**: `partial_update_reminders` / `destroy_reminders`.
 
 Esempio — "ricordami di rivedere questo task domani alle 9":
 ```
@@ -101,16 +121,16 @@ create_reminders(task_id=1234, body={
 Consiglia di impostare i reminder quando l'utente dice "ricordami", "avvisami", "metti un promemoria" o cita una scadenza su un task specifico.
 
 ### "Ho finito X" / "Segna come completato"
-Usa `mcp__prowodo__partial_update_tasks` con questi campi insieme: `is_completed: true, progress: 100, status: "DONE"`. Il backend tratta i tre "segnali done" come invariante (vedi `Task.save()` in `core.models`) — settandone uno solo, gli altri vengono comunque sincronizzati, ma esplicitare tutti e tre rende l'intent chiaro e indipendente da future modifiche al backend.
+Usa `partial_update_tasks` con questi campi insieme: `is_completed: true, progress: 100, status: "DONE"`. Il backend tratta i tre "segnali done" come invariante (vedi `Task.save()` in `core.models`) — settandone uno solo, gli altri vengono comunque sincronizzati, ma esplicitare tutti e tre rende l'intent chiaro e indipendente da future modifiche al backend.
 
 **Aggiornare anche la description con un riassunto di cosa è stato fatto** è una buona pratica quando il task è non-banale: aiuta a riprendere il contesto in futuro. Limite hard: la description ha **max 4096 caratteri** (HTTP 400 oltre, con field-level error message). Se serve narrare molto, splitta in un commento sul task o linka allo spec/plan in `docs/superpowers/`.
 
 ### Aggiornare l'avanzamento / "Sono al 50% su X"
-Usa `mcp__prowodo__partial_update_tasks` con il campo `progress` (0–100).
+Usa `partial_update_tasks` con il campo `progress` (0–100).
 Mostra sempre il progress % nei riepiloghi quando è > 0.
 
 ### "Sposta X prima di Y" / Riordinare
-Per spostamenti singoli usa `mcp__prowodo__move_up_tasks` / `mcp__prowodo__move_down_tasks`. Per spostare un task in posizione precisa o riordinare in massa usa `partial_update_tasks` con il campo `order`.
+Per spostamenti singoli usa `move_up_tasks` / `move_down_tasks`. Per spostare un task in posizione precisa o riordinare in massa usa `partial_update_tasks` con il campo `order`.
 
 **Comportamento critico del backend (verificato 2026-05-22):** dopo ogni `partial_update_tasks` il backend chiama `Task.reorder()` che **renormalizza tutti gli order del livello** sequenzialmente (0, 1, 2, ...) ordinando per `(order ASC, id ASC)`. Implicazioni:
 
@@ -204,25 +224,25 @@ Quando l'utente chiede "cosa hai fatto?" o "aggiorna i task", aggiorna i task Pr
 
 | Azione | Tool |
 |--------|------|
-| Lista company | `mcp__prowodo__list_companys` |
-| Lista progetti | `mcp__prowodo__list_projects` |
-| Lista task | `mcp__prowodo__list_tasks` |
-| Dettaglio task | `mcp__prowodo__retrieve_tasks` |
-| Crea task | `mcp__prowodo__create_tasks` |
-| Aggiorna task | `mcp__prowodo__partial_update_tasks` |
-| Sposta su/giù | `mcp__prowodo__move_up_tasks` / `mcp__prowodo__move_down_tasks` |
-| Sposta in progetto | `mcp__prowodo__move_to_project_tasks` |
-| Riordina root | `mcp__prowodo__reorder_root_tasks` |
-| Aggiungi tag | `mcp__prowodo__add_tag_tasks` |
-| Sotto-task (indent) | `mcp__prowodo__increase_depth_tasks` / `mcp__prowodo__decrease_depth_tasks` |
-| Lista utenti company | `mcp__prowodo__list_users` (path: `company_id`, supporta `search`) |
-| Dettaglio utente | `mcp__prowodo__retrieve_users` |
-| Assegna utente a task | `mcp__prowodo__task_assign_user` (`pk` + `body.user_id`, idempotente) |
-| Rimuovi utente da task | `mcp__prowodo__task_unassign_user` (`pk` + `body.user_id`, noop-safe) |
-| Lista reminder di un task | `mcp__prowodo__list_reminders` (path: `task_id`) |
-| Crea reminder | `mcp__prowodo__create_reminders` (path: `task_id` + body) |
-| Aggiorna reminder | `mcp__prowodo__partial_update_reminders` |
-| Elimina reminder | `mcp__prowodo__destroy_reminders` |
+| Lista company | `list_companys` |
+| Lista progetti | `list_projects` |
+| Lista task | `list_tasks` |
+| Dettaglio task | `retrieve_tasks` |
+| Crea task | `create_tasks` |
+| Aggiorna task | `partial_update_tasks` |
+| Sposta su/giù | `move_up_tasks` / `move_down_tasks` |
+| Sposta in progetto | `move_to_project_tasks` |
+| Riordina root | `reorder_root_tasks` |
+| Aggiungi tag | `add_tag_tasks` |
+| Sotto-task (indent) | `increase_depth_tasks` / `decrease_depth_tasks` |
+| Lista utenti company | `list_users` (path: `company_id`, supporta `search`) |
+| Dettaglio utente | `retrieve_users` |
+| Assegna utente a task | `task_assign_user` (`pk` + `body.user_id`, idempotente) |
+| Rimuovi utente da task | `task_unassign_user` (`pk` + `body.user_id`, noop-safe) |
+| Lista reminder di un task | `list_reminders` (path: `task_id`) |
+| Crea reminder | `create_reminders` (path: `task_id` + body) |
+| Aggiorna reminder | `partial_update_reminders` |
+| Elimina reminder | `destroy_reminders` |
 
 ## Parametri minimi per creare un task
 
