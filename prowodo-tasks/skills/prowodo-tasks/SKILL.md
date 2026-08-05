@@ -157,7 +157,7 @@ task, leggere la discussione già avvenuta, o rispondere a un commento — diver
 `description` (il "cosa" del task): i commenti sono il thread di conversazione.
 
 - `list_taskcomments` / `retrieve_taskcomments` (path: `task_id`) — thread, dal più
-  vecchio.
+  recente (a differenza dei commenti ticket, che sono dal più vecchio).
 - `create_taskcomments` — **`task_id` va nel body, non nel path** (eccezione rispetto
   agli altri tool di questa famiglia — se lo passi solo come path param il commento
   finisce scollegato). L'autore è sempre l'utente autenticato. `comment_id` opzionale
