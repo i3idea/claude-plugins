@@ -44,6 +44,18 @@ lanciare `/mcp` e completare il login OAuth nel browser. Non ripiegare su `curl`
 **Operazioni di scrittura singola** (crea/aggiorna/sposta 1 task): eseguile direttamente senza chiedere conferma.
 **Operazioni massive** (modifica/crea/elimina 5+ task in una volta): chiedi conferma prima.
 
+## Link alla piattaforma
+
+Quando riporti un task, un progetto, uno sprint, un commento, un reminder, un allegato o una dipendenza, **includi sempre `app_url`** come link cliccabile — è un campo read-only esposto dal serializer proprio per questo.
+
+**Non costruire mai a mano la URL di un task (o di un progetto/sprint/...).** Il campo esiste apposta perché il payload da solo non basta a comporla correttamente: usa sempre `app_url` così com'è.
+
+Cose da sapere sui link:
+- Un task apre il drawer del task. Commenti, reminder, allegati task e dipendenze **non hanno una pagina propria** — il loro `app_url` punta al drawer del task padre (per una dipendenza, al **successore**, cioè il task bloccato). Il frontend apre il drawer solo via `?taskId=`: **non esistono tab indirizzabili**, quindi non puoi linkare direttamente al tab dei commenti.
+- Un progetto ha `app_url` che punta a `/{company}/{project}/dashboard`. Le altre viste condividono la stessa base `/{company}/{project}/`: `tasks/list`, `board`, `backlog`, `matrix`, `tasks/timeline`, `sprints`, `attachments`, `scoring`. Quando usarle: prioritizzazione → `matrix`, pianificazione temporale → `tasks/timeline`, sprint in corso → `board`, ricerca/albero → `tasks/list`. Task e sprint portano anche `company_id`, quindi puoi comporre tu stesso queste URL di vista quando serve.
+- **La timeline è gated sul piano** (`featureGuard('gantt')`): a chi non ha Gantt nel piano quel link apre la pagina di billing con un toast di upgrade. Non proporla come default — solo se l'utente chiede esplicitamente la vista timeline/Gantt.
+- Una ticket submission porta **due** link distinti: `app_url` (INTERNO, per il team) e `public_url` (`/t/{uuid}`, PUBBLICO — la pagina che vede chi ha aperto il ticket). **Non confonderli**: dare l'`app_url` interno a un cliente è esattamente l'errore che questa distinzione serve a evitare. `public_url` va condiviso con chi ha aperto il ticket, `app_url` resta interno al team.
+
 ## Scenari d'uso
 
 ### "Cosa c'è da fare?" / Backlog / Planning
@@ -76,7 +88,11 @@ Usa `create_tasks`. Chiedi il progetto se non specificato.
 
 **Disponibile dal backend `8489763` (2026-05-26) / `@prowodo/angular-client@1.2.0`.**
 
-Per assegnare un task a un utente:
+**Mostra sempre gli assegnatari nei riepiloghi**, leggendo il campo `assignees` del task (`retrieve_tasks(pk=<id>)` o già incluso in `list_tasks`) — una lista di dict con `id`, `display_name`, `username`, `email`, `identity_picture_url`. Non serve una chiamata separata per saperlo.
+
+**"Assegna a me" / "cosa devo fare io":** risolvi "io" con il tool utente corrente `retrieve_current_user` (nessun parametro — ritorna id, username, display name, email dell'utente autenticato). **Non indovinare** il proprio nome con una `list_users` a tentativi: prima che esistesse questo tool era l'unico modo, ora è quello sbagliato.
+
+Per assegnare un task a un **altro** utente (non "me"):
 
 1. Risolvi il nome utente in `user_id` con `list_users` (path param: `company_id`). Lo viewset supporta search via `search_fields` su email/username/first_name/last_name/display_name/identity_email — passa la stringa di ricerca come parametro `search` se l'utente cita un nome libero ("Ivan").
 2. Chiama `task_assign_user` con `pk=<task_id>` e `body={"user_id": <id>}`. È **idempotente** — chiamarlo due volte non crea duplicati né errore.
@@ -84,7 +100,7 @@ Per assegnare un task a un utente:
 
 **Sicurezza:** il backend rifiuta con 400 se `user_id` punta a un utente NON membro della company del task (cross-tenant). Niente leak.
 
-**Per vedere chi è assegnato a un task:** il `Task` serializer espone già la lista degli assegnatari nel campo `users`/`task_assignements` — basta `retrieve_tasks(pk=<id>)`. Non serve una chiamata separata.
+**Quando un task passa a `IN_PROGRESS` e non ha assegnatari, proponi di assegnarlo** — default: l'utente collegato (via `retrieve_current_user`), salvo diversa indicazione. Uno stato "in corso" senza nessun responsabile è il caso più comune di task che si perde.
 
 Esempio flow tipico — "Assegna il task #1234 a Ivan":
 ```
@@ -119,6 +135,10 @@ create_reminders(task_id=1234, body={
 ```
 
 Consiglia di impostare i reminder quando l'utente dice "ricordami", "avvisami", "metti un promemoria" o cita una scadenza su un task specifico.
+
+### Stati del task (`status`)
+
+Il campo `status` ha **quattro valori**: `BACKLOG`, `TODO`, `IN_PROGRESS`, `DONE`. Usalo per riflettere dove si trova il task nel flusso di lavoro, non solo per marcarlo finito — es. quando l'utente dice "ci sto lavorando" o "inizio X", porta il task a `IN_PROGRESS` con `partial_update_tasks(status: "IN_PROGRESS")` (vedi anche la nota su IN_PROGRESS e assegnatari sopra).
 
 ### "Ho finito X" / "Segna come completato"
 Usa `partial_update_tasks` con questi campi insieme: `is_completed: true, progress: 100, status: "DONE"`. Il backend tratta i tre "segnali done" come invariante (vedi `Task.save()` in `core.models`) — settandone uno solo, gli altri vengono comunque sincronizzati, ma esplicitare tutti e tre rende l'intent chiaro e indipendente da future modifiche al backend.
@@ -206,7 +226,7 @@ Non tutti i progetti seguono Scrum. La modalità è una **preferenza per progett
 
 Quando l'utente NON usa Scrum (o non lo ha indicato in memoria) **non menzionare mai** sprint/grooming/velocity in modo proattivo: stai sul workflow base (backlog, priorità, ordine).
 
-I tool MCP per gestire sprint dal lato agente (`list_sprints`, `start_sprints`, `close_sprints`, `move_to_sprint_tasks`, `move_sprint_lanes`, ...) saranno disponibili dopo il deploy della relativa feature backend. Se non li trovi nella lista tool, gestisci sprint chiedendo all'utente di farlo dall'UI e limita la skill al backlog/task.
+I tool MCP per gestire sprint dal lato agente sono live: `list_sprints`, `create_sprints`, `start_sprints`, `close_sprints`, `move_to_sprint_tasks` e i tool delle lane (`list_sprint_lanes`, `move_sprint_lanes`, ...).
 
 ### Fine sessione di lavoro
 Se hai completato del lavoro significativo, proponi di registrare i task completati o creare task per il follow-up in ProWoDo.
@@ -237,6 +257,7 @@ Quando l'utente chiede "cosa hai fatto?" o "aggiorna i task", aggiorna i task Pr
 | Sotto-task (indent) | `increase_depth_tasks` / `decrease_depth_tasks` |
 | Lista utenti company | `list_users` (path: `company_id`, supporta `search`) |
 | Dettaglio utente | `retrieve_users` |
+| Utente corrente ("io") | `retrieve_current_user` (nessun parametro) |
 | Assegna utente a task | `task_assign_user` (`pk` + `body.user_id`, idempotente) |
 | Rimuovi utente da task | `task_unassign_user` (`pk` + `body.user_id`, noop-safe) |
 | Lista reminder di un task | `list_reminders` (path: `task_id`) |
@@ -344,11 +365,9 @@ Il campo è `is_archivied` (typo del backend, non `is_archived`).
 - Se un default risulta archiviato, **avvisa l'utente** e chiedi un'alternativa attiva (di solito il team ha consolidato il lavoro altrove). Aggiorna la memoria.
 - Se l'utente cita un progetto per nome che non appare in `list_projects`, fai un `retrieve_projects` per id (se lo conosci) o segnala "non trovato tra gli attivi, potrebbe essere archiviato".
 
-### `move_to_project_tasks`: schema MCP incompleto, tool non invocabile (verificato 2026-05-25)
+### `move_to_project_tasks`: come si usa
 
-Il tool MCP `move_to_project_tasks` espone solo `pk` nello schema, ma il viewset richiede `project_id` nel body HTTP. Passare `project_id` (o `body`, `data`, `project`) dentro `kwargs` viene espanso come keyword argument al metodo del viewset e rifiutato con `got an unexpected keyword argument`. Al momento il tool non è invocabile dall'agente.
-
-**Workaround:** ricrea il task in destinazione con `create_tasks(project_id=<target>)` (copia title/description/priority/story_points/status) e cancella l'originale con `destroy_tasks`. Perdi l'ID originale e l'order, ma è funzionalmente equivalente. Avvisa l'utente del nuovo ID.
+Per spostare un task in un altro progetto (anche di un'altra company) chiama `move_to_project_tasks` con `pk=<task_id>` e `body={"project_id": <target_project_id>, "company_id": <target_company_id>}`. Lo schema MCP accetta entrambi i campi nel body — il task mantiene ID e passa al nuovo progetto/company. Non serve ricrearlo né cancellare l'originale.
 
 ## Regole
 
