@@ -1,6 +1,6 @@
 # Elenco completo dei tool MCP ProWoDo
 
-Tabella generata dal backend (`grep -oP '^\s{4}"\K[a-z_]+(?=":)' pwd-backend/src/prowodo/core/api/mcp_descriptions.py | sort`), **80 tool**. Vedi `SKILL.md` per i nomi nudi vs il prefisso reale del tool (`mcp__plugin_prowodo-tasks_prowodo__...` o equivalente) e per il flusso base.
+Tabella generata dal backend (`grep -oP '^\s{4}"\K[a-z_]+(?=":)' pwd-backend/src/prowodo/core/api/mcp_descriptions.py | sort`) più `task_assign_user` / `task_unassign_user`, che portano la descrizione inline via `@mcp_tool(description=...)` invece che in `mcp_descriptions.py` e quindi non compaiono in quel grep — **82 tool** in totale. Vedi `SKILL.md` per i nomi nudi vs il prefisso reale del tool (`mcp__plugin_prowodo-tasks_prowodo__...` o equivalente) e per il flusso base.
 
 "Path param" elenca solo i parametri **oltre** all'id della risorsa stessa (che per retrieve/update/partial_update/destroy va comunque passato, tipicamente come `pk`). "—" = nessun path param oltre eventualmente `pk`.
 
@@ -24,7 +24,7 @@ Tabella generata dal backend (`grep -oP '^\s{4}"\K[a-z_]+(?=":)' pwd-backend/src
 
 | Tool | Path param | Scopo |
 |------|-----------|-------|
-| `list_projects` | `company_id` | Lista i progetti di una company; esclude gli archiviati salvo `include_archived=true`. |
+| `list_projects` | `company_id` | Lista i progetti attivi di una company — **esclude sempre gli archiviati, via MCP non c'è modo di includerli**: il param REST `include_archived` esiste ma il body del tool accetta solo `company_id`, quindi resta sempre `false`. Per un progetto archiviato specifico usa `retrieve_projects` (lo restituisce anche se archiviato). |
 | `retrieve_projects` | `company_id` | Dettaglio di un progetto per id (inclusi gli archiviati). |
 | `create_projects` | `company_id` | Crea un progetto in una company. |
 | `update_projects` | `company_id` | Sostituzione completa (PUT) di un progetto — tutti i campi scrivibili richiesti. |
@@ -55,6 +55,13 @@ Tabella generata dal backend (`grep -oP '^\s{4}"\K[a-z_]+(?=":)' pwd-backend/src
 | `reorder_children_tasks` | — | Compatta gli `order` dei figli diretti di un task (id del genitore come `pk`). |
 | `move_to_project_tasks` | — | Sposta il task in un altro progetto/company (`project_id` + `company_id` nel body). |
 | `move_to_sprint_tasks` | — | Sposta uno o più task (e discendenti) in uno sprint o nel backlog (`task_ids` + `sprint_id`, null = backlog). |
+
+## Assegnazione utenti sul task
+
+| Tool | Path param | Scopo |
+|------|-----------|-------|
+| `task_assign_user` | — | Aggiunge un utente come assegnatario di un task (`pk` + `body.user_id`); idempotente, rifiuta con 400 se l'utente non è membro della company del task. |
+| `task_unassign_user` | — | Rimuove un utente dagli assegnatari di un task (`pk` + `body.user_id`); noop-safe, non solleva errore se non era assegnato. |
 
 ## Tag
 
@@ -112,7 +119,7 @@ Non esistono `update_attachments`/`partial_update_attachments`: un allegato si s
 
 | Tool | Path param | Scopo |
 |------|-----------|-------|
-| `list_taskdependencys` | `company_id`, `project_id` | Lista le dipendenze di schedulazione di un progetto; filtra su un task con `?task=<id>`. |
+| `list_taskdependencys` | `company_id`, `project_id` | Lista **tutte** le dipendenze di schedulazione di un progetto — **nessun filtro per singolo task via MCP** (il param REST `task` esiste ma il body del tool accetta solo `company_id`/`project_id`); per le dipendenze di un task specifico filtra client-side il risultato dove `predecessor` o `successor` è quel task. |
 | `retrieve_taskdependencys` | `company_id`, `project_id` | Dettaglio di una dipendenza per id. |
 | `create_taskdependencys` | `company_id`, `project_id` | Collega due task dello stesso progetto (`dependency_type` FS/SS/FF/SF, `lag_days`); rifiutata (400) su self-link, cross-project, antenato/discendente, ciclo. |
 | `update_taskdependencys` | `company_id`, `project_id` | Sostituzione completa (PUT) di una dipendenza — richiede predecessor, successor, dependency_type, lag_days. |
@@ -123,7 +130,7 @@ Non esistono `update_attachments`/`partial_update_attachments`: un allegato si s
 
 | Tool | Path param | Scopo |
 |------|-----------|-------|
-| `list_sprints` | — | Lista gli sprint dei progetti delle company dell'utente; filtra per `state` (PLANNED\|ACTIVE\|CLOSED). |
+| `list_sprints` | — | Lista gli sprint dei progetti delle company dell'utente; filtra per `state` (PLANNED\|ACTIVE\|CLOSED) e per `project_id` (per restringere a un singolo progetto). |
 | `retrieve_sprints` | — | Dettaglio di uno sprint per id. |
 | `create_sprints` | — | Crea uno sprint (`project_id` nel body); nasce in stato PLANNED. |
 | `update_sprints` | — | Sostituzione completa (PUT) di uno sprint. |
@@ -136,7 +143,7 @@ Non esistono `update_attachments`/`partial_update_attachments`: un allegato si s
 
 | Tool | Path param | Scopo |
 |------|-----------|-------|
-| `list_sprint_lanes` | — | Lista le lane (task → colonna board) di uno sprint; filtra con `?sprint_id=`. |
+| `list_sprint_lanes` | — | Lista **tutte** le lane (task → colonna board) di **tutti** gli sprint di tutte le company dell'utente — **nessun filtro server-side via MCP** (il param REST `sprint_id` esiste ma il body del tool non accetta parametri): filtra client-side sul campo `sprint_id` di ogni lane. Vedi `references/collaboration.md`. |
 | `retrieve_sprint_lanes` | — | Dettaglio di una lane per id. |
 | `move_sprint_lanes` | — | Sposta una lane in un'altra colonna (`project_task_status_id`, null = colonna "Incoming"); non muovibile su sprint chiusi. |
 

@@ -243,8 +243,12 @@ create_taskdependencys(company_id=1, project_id=7, body={
 })
 ```
 
-Filtra le dipendenze di un singolo task con `list_taskdependencys(..., task=1234)` —
-il parametro `task` matcha sia da predecessor che da successor.
+`list_taskdependencys` **non ha un filtro per singolo task via MCP** — lato REST
+esiste un param `?task=<id>` (matcha sia da predecessor che da successor), ma il body
+del tool accetta solo `company_id`/`project_id`, quindi quel filtro non è
+raggiungibile. Per le dipendenze di un task specifico chiama
+`list_taskdependencys(company_id=.., project_id=..)` e filtra tu il risultato dove
+`predecessor` o `successor` è quel task.
 
 ### Stati del task (`status`)
 
@@ -339,7 +343,7 @@ Quando l'utente NON usa Scrum (o non lo ha indicato in memoria) **non menzionare
 **CRUD sprint** — nessun path param (lo sprint è scoped alle company dell'utente via
 query, non via URL):
 
-- `list_sprints` / `retrieve_sprints` — filtra per `state` (`PLANNED`|`ACTIVE`|`CLOSED`); usa `list_sprints(state="ACTIVE")` per trovare lo sprint attivo di un progetto.
+- `list_sprints` / `retrieve_sprints` — filtra per `state` (`PLANNED`|`ACTIVE`|`CLOSED`) e per `project_id`; usa `list_sprints(state="ACTIVE", project_id=<id>)` per trovare lo sprint attivo *di un progetto specifico* — senza `project_id` la ricerca copre gli sprint di tutti i progetti delle company dell'utente.
 - `create_sprints` — `project_id` nel body (non nel path), `name`, `start_date`/`end_date`. Nasce sempre in `PLANNED`.
 - `update_sprints` / `partial_update_sprints` — nome, date, note; **non** per cambiare stato (vedi sotto).
 - `destroy_sprints` — solo se `PLANNED`; su uno sprint ACTIVE/CLOSED torna 409, va chiuso invece di cancellato.
@@ -514,11 +518,11 @@ Per spostare un task in un altro progetto (anche di un'altra company) chiama `mo
 
 ## Documentazione di riferimento
 
-Questo file copre i flussi ad alta frequenza. Il backend espone **80 tool MCP** in
+Questo file copre i flussi ad alta frequenza. Il backend espone **82 tool MCP** in
 totale — le famiglie rimanenti sono in due file separati per non caricarle in ogni
 sessione quando non servono:
 
-- **`references/tools.md`** — tabella completa di tutti gli 80 tool, raggruppati per
+- **`references/tools.md`** — tabella completa di tutti gli 82 tool, raggruppati per
   famiglia, con path param richiesti e una frase di scopo per ciascuno. Apri questo
   file quando ti serve l'elenco completo o il nome esatto di un tool che non ricordi.
 - **`references/collaboration.md`** — le famiglie a bassa frequenza con "quando serve"
