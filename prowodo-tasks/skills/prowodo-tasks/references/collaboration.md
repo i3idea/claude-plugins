@@ -121,17 +121,13 @@ tipo "Da fare / In corso / Fatto") e non solo di "che task ci sono nello sprint"
 lista task (`list_tasks(sprint=<id>)`) non dice in quale colonna sta un task, le lanes
 sì.
 
-- `list_sprint_lanes` — **non accetta nessun parametro via MCP.** Lato REST il
-  viewset supporta un filtro `?sprint_id=`, ma nessun mixin copia il body della
-  chiamata MCP in `GET` per questo viewset, quindi quel filtro non è raggiungibile:
-  ogni chiamata ritorna **le lane di tutti gli sprint di tutte le company
-  dell'utente**. **Filtra sempre client-side** sul campo `sprint_id` di ogni lane
-  (confrontalo con l'id dello sprint che ti interessa) — se salti questo passo credi
-  di vedere la board di uno sprint e invece stai guardando lane mescolate di sprint
-  diversi. **Nota anche:** il backfill delle lane mancanti per task già nello sprint
-  (dati legacy senza lane) scatta solo quando il filtro server-side per sprint viene
-  applicato — via MCP non scatta mai, quindi non dare per scontato che ogni task
-  dello sprint abbia già una lane in questo risultato.
+- `list_sprint_lanes` — **passa sempre `sprint_id`.** Senza, la chiamata ritorna le
+  lane di *tutti* gli sprint di *tutte* le company dell'utente, e ti ritrovi a
+  guardare board diverse mescolate credendo di vederne una. Con `sprint_id` scatta
+  anche il backfill delle lane mancanti per i task già nello sprint (dati legacy
+  entrati prima delle lane), quindi il risultato è completo — senza filtro quel
+  backfill non parte e mancano righe. Accetta anche `task_id` per isolare una lane
+  singola.
 - `retrieve_sprint_lanes` — dettaglio di una lane per id: quale task, quale colonna.
 - `move_sprint_lanes` — sposta una lane in un'altra colonna
   (`project_task_status_id`, l'id della colonna target — deve appartenere al progetto
@@ -140,8 +136,7 @@ sì.
 
 Esempio — spostare un task in "In corso" sulla board (sprint 44):
 ```
-list_sprint_lanes()
+list_sprint_lanes(sprint_id=44)
   → [{id: 501, sprint_id: 44, task_id: 1234, project_task_status_id: null}, ...]
-# filtra tu il risultato dove sprint_id == 44
 move_sprint_lanes(pk=501, body={"project_task_status_id": 7})
 ```
