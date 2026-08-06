@@ -243,12 +243,13 @@ create_taskdependencys(company_id=1, project_id=7, body={
 })
 ```
 
-`list_taskdependencys` **non ha un filtro per singolo task via MCP** — lato REST
-esiste un param `?task=<id>` (matcha sia da predecessor che da successor), ma il body
-del tool accetta solo `company_id`/`project_id`, quindi quel filtro non è
-raggiungibile. Per le dipendenze di un task specifico chiama
-`list_taskdependencys(company_id=.., project_id=..)` e filtra tu il risultato dove
-`predecessor` o `successor` è quel task.
+Per le dipendenze di un **singolo** task passa `task`: matcha da entrambi i versi —
+sia le dipendenze che lo bloccano, sia quelle che dipendono da lui. Senza, ricevi
+l'intero grafo del progetto.
+
+```
+list_taskdependencys(company_id=1, project_id=7, task=1234)
+```
 
 ### Stati del task (`status`)
 

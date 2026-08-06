@@ -24,7 +24,7 @@ Tabella generata dal backend (`grep -oP '^\s{4}"\K[a-z_]+(?=":)' pwd-backend/src
 
 | Tool | Path param | Scopo |
 |------|-----------|-------|
-| `list_projects` | `company_id` | Lista i progetti attivi di una company — **esclude sempre gli archiviati, via MCP non c'è modo di includerli**: il param REST `include_archived` esiste ma il body del tool accetta solo `company_id`, quindi resta sempre `false`. Per un progetto archiviato specifico usa `retrieve_projects` (lo restituisce anche se archiviato). |
+| `list_projects` | `company_id` | Lista i progetti di una company. Esclude gli archiviati salvo `include_archived=true`. Filtra anche per `id`, `title__icontains`, `description__icontains`, più `search`. |
 | `retrieve_projects` | `company_id` | Dettaglio di un progetto per id (inclusi gli archiviati). |
 | `create_projects` | `company_id` | Crea un progetto in una company. |
 | `update_projects` | `company_id` | Sostituzione completa (PUT) di un progetto — tutti i campi scrivibili richiesti. |
@@ -119,7 +119,7 @@ Non esistono `update_attachments`/`partial_update_attachments`: un allegato si s
 
 | Tool | Path param | Scopo |
 |------|-----------|-------|
-| `list_taskdependencys` | `company_id`, `project_id` | Lista **tutte** le dipendenze di schedulazione di un progetto — **nessun filtro per singolo task via MCP** (il param REST `task` esiste ma il body del tool accetta solo `company_id`/`project_id`); per le dipendenze di un task specifico filtra client-side il risultato dove `predecessor` o `successor` è quel task. |
+| `list_taskdependencys` | `company_id`, `project_id` | Lista le dipendenze di schedulazione di un progetto. Passa `task` per avere solo quelle che toccano un task, da entrambi i versi (chi lo blocca e chi ne dipende); senza, torna il grafo intero. |
 | `retrieve_taskdependencys` | `company_id`, `project_id` | Dettaglio di una dipendenza per id. |
 | `create_taskdependencys` | `company_id`, `project_id` | Collega due task dello stesso progetto (`dependency_type` FS/SS/FF/SF, `lag_days`); rifiutata (400) su self-link, cross-project, antenato/discendente, ciclo. |
 | `update_taskdependencys` | `company_id`, `project_id` | Sostituzione completa (PUT) di una dipendenza — richiede predecessor, successor, dependency_type, lag_days. |
@@ -143,7 +143,7 @@ Non esistono `update_attachments`/`partial_update_attachments`: un allegato si s
 
 | Tool | Path param | Scopo |
 |------|-----------|-------|
-| `list_sprint_lanes` | — | Lista **tutte** le lane (task → colonna board) di **tutti** gli sprint di tutte le company dell'utente — **nessun filtro server-side via MCP** (il param REST `sprint_id` esiste ma il body del tool non accetta parametri): filtra client-side sul campo `sprint_id` di ogni lane. Vedi `references/collaboration.md`. |
+| `list_sprint_lanes` | — | Lista le lane (task → colonna board) di uno sprint. **Passa sempre `sprint_id`**: senza, torna le lane di tutti gli sprint di tutte le company, e non scatta il backfill delle lane mancanti. Accetta anche `task_id`. Vedi `references/collaboration.md`. |
 | `retrieve_sprint_lanes` | — | Dettaglio di una lane per id. |
 | `move_sprint_lanes` | — | Sposta una lane in un'altra colonna (`project_task_status_id`, null = colonna "Incoming"); non muovibile su sprint chiusi. |
 
