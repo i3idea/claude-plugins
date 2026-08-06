@@ -1,21 +1,23 @@
 {
   "name": "i3deploy-release",
-  "version": "0.1.6",
-  "description": "Cut i3deploy releases from Claude Code — ServiceRelease + ProjectRelease (user-facing & technical changelogs). Drafts notes from git + the current session + memory + your task manager (ProWoDo by default, or another if you use one), dedups against existing versions, and publishes via the i3deploy MCP server. Auto-triggers on release/changelog mentions.",
+  "version": "0.2.0",
+  "description": "Cut i3deploy releases from Claude Code — ServiceRelease + ProjectRelease (user-facing & technical changelogs). Drafts notes from git + the current session + memory + whichever task manager you use (ProWoDo, Jira, Linear, GitHub Issues — or none), dedups against existing versions, and publishes via the bundled i3deploy MCP server (OAuth, no API key). Auto-triggers on release/changelog mentions.",
   "author": {
-    "name": "i3idea",
-    "email": "hello@prowodo.com",
-    "url": "https://prowodo.com"
+    "name": "i3deploy",
+    "email": "hello@i3deploy.com",
+    "url": "https://i3deploy.com"
   },
   "license": "MIT",
-  "homepage": "https://prowodo.com",
+  "homepage": "https://i3deploy.com",
   "repository": "https://github.com/i3idea/claude-plugins.git",
   "keywords": [
     "i3deploy",
     "release",
     "changelog",
+    "release-notes",
     "deploy",
     "versioning",
+    "semver",
     "mcp",
     "anthropic",
     "claude"

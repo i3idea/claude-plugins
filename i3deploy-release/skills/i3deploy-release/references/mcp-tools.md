@@ -1,8 +1,10 @@
 # i3deploy MCP tools — field reference (phase 1)
 
 Endpoint: `POST https://mcp.i3deploy.com/mcp/` (Streamable HTTP).
-Auth: `Authorization: Bearer <org key>`. The organization is implied by the key —
-you never pass an org/company argument.
+Auth: OAuth 2.0 (Dynamic Client Registration + PKCE) — what the plugin-bundled
+server uses — or `Authorization: Bearer <org key>`. Either way you never pass an
+org/company argument: with a key the organization is implied by the key, with
+OAuth it comes from your account's memberships (see the org notes in `SKILL.md`).
 
 **Every tool wraps its arguments under a `body` key.** Example:
 `create_service_releases({"body": { ... }})`.

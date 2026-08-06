@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "i3deploy": {
+      "type": "http",
+      "url": "https://mcp.i3deploy.com/mcp/"
+    }
+  }
+}

@@ -1,6 +1,6 @@
 ---
 name: i3deploy-release
-description: Create and publish i3deploy releases — ServiceRelease (one service's version + changelog) and ProjectRelease (a project version that bundles service releases, with user-facing and technical changelogs). Use this skill whenever the user wants to cut, publish, draft, or record a release or changelog for an i3idea/i3deploy-tracked project or service — e.g. "nuova release", "rilascia pwd-backend", "pubblica una release di i3school", "crea la project release", "changelog di rilascio", "facciamo una release", "bump version and release", or /i3deploy-release. Trigger even when the user doesn't say "i3deploy" explicitly, as long as they're cutting a release in a repo that has an i3version/deploy.json. Drafts the changelog from git + the current session + memory + ProWoDo tasks, dedups against existing releases, and creates everything through the i3deploy MCP tools after your confirmation.
+description: Create and publish i3deploy releases — ServiceRelease (one service's version + changelog) and ProjectRelease (a project version that bundles service releases, with user-facing and technical changelogs). Use this skill whenever the user wants to cut, publish, draft, or record a release or changelog for an i3idea/i3deploy-tracked project or service — e.g. "nuova release", "rilascia pwd-backend", "pubblica una release di i3school", "crea la project release", "changelog di rilascio", "facciamo una release", "bump version and release", or /i3deploy-release. Trigger even when the user doesn't say "i3deploy" explicitly, as long as they're cutting a release in a repo that has an i3version/deploy.json. Drafts the changelog from git + the current session + memory + whichever task manager the user has, dedups against existing releases, and creates everything through the i3deploy MCP tools after your confirmation.
 ---
 
 # i3deploy — Release Population
@@ -25,9 +25,14 @@ ProjectRelease that bundles them.
 This skill calls i3deploy MCP tools (`list_*`, `retrieve_*`, `create_*`). If those
 tools are not available in your session, **stop and set up the connector** — do
 not fall back to curl (the MCP exists precisely so releases aren't hand-rolled
-HTTP). Two ways to connect, depending on the client:
+HTTP).
 
-- **Claude Code (API key):**
+When installed as a plugin, the i3deploy MCP server **ships with the skill**: the
+user only runs `/mcp`, picks `i3deploy`, and completes the browser login (OAuth
+2.0 with Dynamic Client Registration + PKCE — no API key stored anywhere). The
+other ways to connect still work:
+
+- **Claude Code (API key)** — right for CI or a shared machine:
   ```
   claude mcp add --transport http i3deploy https://mcp.i3deploy.com/mcp/ \
     --header "Authorization: Bearer <KEY>"
@@ -37,6 +42,18 @@ HTTP). Two ways to connect, depending on the client:
 - **claude.ai (OAuth):** Settings → Connectors → Add custom connector → URL
   `https://mcp.i3deploy.com/mcp/`. The browser OAuth flow signs you in; the
   org(s) come from your account's memberships.
+
+**Tool names depend on how it's connected** — this skill uses the bare names
+(`list_service_releases`, …); the real prefix in your session is one of:
+
+| Connection | Actual tool name |
+|---|---|
+| MCP bundled with the plugin (default) | `mcp__plugin_i3deploy-release_i3deploy__list_service_releases` |
+| `claude mcp add ... i3deploy` (manual) | `mcp__i3deploy__list_service_releases` |
+| claude.ai connector | `mcp__claude_ai_i3deploy__list_service_releases` |
+
+If two of these are authenticated at once you'll see duplicate tool sets — use
+either one, but tell the user so they can drop the redundant connection.
 
 **Which org a release lands in:**
 - API key → that key's single org (org `i3` covers pwd / i3school / i3deploy; org
@@ -90,15 +107,20 @@ the others tell you *why it matters*):
 3. **memory** — `~/.claude/projects/<cwd-slug>/memory/` for decisions, constraints,
    or follow-ups worth surfacing in the notes.
 4. **the task manager** — recently completed or related tasks for this project.
-   **ProWoDo is the default** (use its MCP tools, e.g. `list_tasks` filtered to the
-   project, `is_completed=true`). But don't assume it's the only one: if you don't
-   see ProWoDo in use, or the repo/user hints at another tracker (a `.jira`/Jira
-   key like `PROJ-123` in commit messages, a Linear/GitHub Issues workflow, an
-   Atlassian connector in your session), **ask the user which task manager they
-   use** and pull completed/related items from there instead (e.g. the Atlassian
-   tools for Jira). Tasks are the canonical "what we set out to do"; reference or
-   summarize them. If no task manager is available, just skip this source — git +
-   session + memory still give a solid draft.
+   **Use whichever one this user actually has**; i3deploy doesn't assume any
+   particular tracker. Detect it from the session and the repo:
+   - ProWoDo tools available (`list_tasks`, any prefix) → use them, filtered to the
+     project with `is_completed=true`.
+   - Jira keys in commit messages (`PROJ-123`), an Atlassian connector in session →
+     use the Atlassian tools.
+   - A Linear or GitHub Issues workflow (`gh issue list`, issue refs in commits) →
+     use that.
+   - Ambiguous or nothing detected → **ask the user which task manager they use**
+     rather than guessing.
+
+   Tasks are the canonical "what we set out to do"; reference or summarize them.
+   If there's no task manager, just skip this source — git + session + memory still
+   give a solid draft.
 
 Synthesize, don't dump: a changelog is a curated story, not a commit log paste.
 

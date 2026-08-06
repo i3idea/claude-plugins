@@ -2,8 +2,8 @@
   "name": "i3idea",
   "owner": {
     "name": "i3idea",
-    "email": "hello@prowodo.com",
-    "url": "https://prowodo.com"
+    "email": "hello@i3idea.com",
+    "url": "https://i3idea.com"
   },
   "plugins": [
     {
@@ -15,8 +15,8 @@
     {
       "name": "i3deploy-release",
       "source": "./i3deploy-release",
-      "description": "Cut i3deploy releases (ServiceRelease + ProjectRelease, user/technical changelogs) from Claude Code or claude.ai. Drafts from git + session + memory + your task manager, dedups, publishes via the i3deploy MCP server (API key or OAuth).",
-      "version": "0.1.6"
+      "description": "Cut i3deploy releases (ServiceRelease + ProjectRelease, user/technical changelogs) from Claude Code or claude.ai. Drafts from git + session + memory + whichever task manager you use, dedups, and publishes via the bundled i3deploy MCP server (OAuth, no API key). Standalone — no ProWoDo required.",
+      "version": "0.2.0"
     }
   ]
 }
