@@ -44,6 +44,18 @@ lanciare `/mcp` e completare il login OAuth nel browser. Non ripiegare su `curl`
 **Operazioni di scrittura singola** (crea/aggiorna/sposta 1 task): eseguile direttamente senza chiedere conferma.
 **Operazioni massive** (modifica/crea/elimina 5+ task in una volta): chiedi conferma prima.
 
+## Link alla piattaforma
+
+Quando riporti un task, un progetto, uno sprint, un commento, un reminder, un allegato o una dipendenza, **includi sempre `app_url`** come link cliccabile — è un campo read-only esposto dal serializer proprio per questo.
+
+**Non costruire mai a mano la URL di un task (o di un progetto/sprint/...).** Il campo esiste apposta perché il payload da solo non basta a comporla correttamente: usa sempre `app_url` così com'è.
+
+Cose da sapere sui link:
+- Un task apre il drawer del task. Commenti, reminder, allegati task e dipendenze **non hanno una pagina propria** — il loro `app_url` punta al drawer del task padre (per una dipendenza, al **successore**, cioè il task bloccato). Il frontend apre il drawer solo via `?taskId=`: **non esistono tab indirizzabili**, quindi non puoi linkare direttamente al tab dei commenti.
+- Un progetto ha `app_url` che punta a `/{company}/{project}/dashboard`. Le altre viste condividono la stessa base `/{company}/{project}/`: `tasks/list`, `board`, `backlog`, `matrix`, `tasks/timeline`, `sprints`, `attachments`, `scoring`. Quando usarle: prioritizzazione → `matrix`, pianificazione temporale → `tasks/timeline`, sprint in corso → `board`, ricerca/albero → `tasks/list`. Task e sprint portano anche `company_id`, quindi puoi comporre tu stesso queste URL di vista quando serve.
+- **La timeline è gated sul piano** (`featureGuard('gantt')`): a chi non ha Gantt nel piano quel link apre la pagina di billing con un toast di upgrade. Non proporla come default — solo se l'utente chiede esplicitamente la vista timeline/Gantt.
+- Una ticket submission porta **due** link distinti: `app_url` (INTERNO, per il team) e `public_url` (`/t/{uuid}`, PUBBLICO — la pagina che vede chi ha aperto il ticket). **Non confonderli**: dare l'`app_url` interno a un cliente è esattamente l'errore che questa distinzione serve a evitare. `public_url` va condiviso con chi ha aperto il ticket, `app_url` resta interno al team.
+
 ## Scenari d'uso
 
 ### "Cosa c'è da fare?" / Backlog / Planning
@@ -76,7 +88,11 @@ Usa `create_tasks`. Chiedi il progetto se non specificato.
 
 **Disponibile dal backend `8489763` (2026-05-26) / `@prowodo/angular-client@1.2.0`.**
 
-Per assegnare un task a un utente:
+**Mostra sempre gli assegnatari nei riepiloghi**, leggendo il campo `assignees` del task (`retrieve_tasks(pk=<id>)` o già incluso in `list_tasks`) — una lista di dict con `id`, `display_name`, `username`, `email`, `identity_picture_url`. Non serve una chiamata separata per saperlo.
+
+**"Assegna a me" / "cosa devo fare io":** risolvi "io" con il tool utente corrente `retrieve_current_user` (nessun parametro — ritorna id, username, display name, email dell'utente autenticato). **Non indovinare** il proprio nome con una `list_users` a tentativi: prima che esistesse questo tool era l'unico modo, ora è quello sbagliato.
+
+Per assegnare un task a un **altro** utente (non "me"):
 
 1. Risolvi il nome utente in `user_id` con `list_users` (path param: `company_id`). Lo viewset supporta search via `search_fields` su email/username/first_name/last_name/display_name/identity_email — passa la stringa di ricerca come parametro `search` se l'utente cita un nome libero ("Ivan").
 2. Chiama `task_assign_user` con `pk=<task_id>` e `body={"user_id": <id>}`. È **idempotente** — chiamarlo due volte non crea duplicati né errore.
@@ -84,7 +100,7 @@ Per assegnare un task a un utente:
 
 **Sicurezza:** il backend rifiuta con 400 se `user_id` punta a un utente NON membro della company del task (cross-tenant). Niente leak.
 
-**Per vedere chi è assegnato a un task:** il `Task` serializer espone già la lista degli assegnatari nel campo `users`/`task_assignements` — basta `retrieve_tasks(pk=<id>)`. Non serve una chiamata separata.
+**Quando un task passa a `IN_PROGRESS` e non ha assegnatari, proponi di assegnarlo** — default: l'utente collegato (via `retrieve_current_user`), salvo diversa indicazione. Uno stato "in corso" senza nessun responsabile è il caso più comune di task che si perde.
 
 Esempio flow tipico — "Assegna il task #1234 a Ivan":
 ```
@@ -119,6 +135,124 @@ create_reminders(task_id=1234, body={
 ```
 
 Consiglia di impostare i reminder quando l'utente dice "ricordami", "avvisami", "metti un promemoria" o cita una scadenza su un task specifico.
+
+### "Che reminder ho oggi?" / "Cosa scatta questa settimana?"
+
+`list_reminders` è scoped a **un** task (richiede `task_id`). Per una vista trasversale
+— "i miei reminder di oggi", indipendentemente dal task su cui sono stati messi — usa
+`list_all_reminders`: nessun path param, filtra su tutti i task dell'utente con
+`remind_at__date` / `remind_at__gte` / `remind_at__lte` e `is_sent`.
+
+```
+list_all_reminders(remind_at__date="2026-08-05", is_sent=false)
+```
+
+Usalo per riepiloghi tipo "cosa devo ricordare oggi" invece di iterare `list_tasks` +
+`list_reminders` task per task.
+
+### Commenti sui task
+
+**Quando serve:** l'utente vuole lasciare un aggiornamento per gli stakeholder su un
+task, leggere la discussione già avvenuta, o rispondere a un commento — diverso dalla
+`description` (il "cosa" del task): i commenti sono il thread di conversazione.
+
+- `list_taskcomments` / `retrieve_taskcomments` (path: `task_id`) — thread, dal più
+  recente (a differenza dei commenti ticket, che sono dal più vecchio).
+- `create_taskcomments` — **`task_id` va nel body, non nel path** (eccezione rispetto
+  agli altri tool di questa famiglia — se lo passi solo come path param il commento
+  finisce scollegato). L'autore è sempre l'utente autenticato. `comment_id` opzionale
+  per rispondere a un commento esistente.
+- `destroy_taskcomments` (path: `task_id`) — soft-delete: il commento sparisce dal
+  thread ma non è cancellato fisicamente.
+
+```
+create_taskcomments(body={
+  "task_id": 1234,
+  "text": "Bloccato in attesa di conferma dal cliente sul copy."
+})
+```
+
+`app_url` del commento punta al drawer del task padre (i commenti non hanno una pagina
+propria — vedi "Link alla piattaforma").
+
+### Allegati — company/progetto e task
+
+**Quando serve:** mostrare cosa è attaccato a un progetto o a una company, o crearne di
+nuovi (testo, file piccoli, link a Drive/Figma/pagine web).
+
+Due famiglie distinte, non intercambiabili:
+
+- **Allegati di company/progetto** — `list_attachments` / `retrieve_attachments` /
+  `create_attachments` / `destroy_attachments` (path: `company_id`). `list_attachments`
+  con `project_id` filtra su un progetto, con `project_id__isnull=true` mostra i soli
+  allegati della company. **Un allegato senza progetto (`project_id` omesso) ha
+  `app_url = null`: non esiste una pagina "allegati di company"**, solo quella per
+  progetto — non aspettarti un link cliccabile in quel caso, e dillo se l'utente lo
+  chiede. Non esistono `update`/`partial_update_attachments`: un allegato si sostituisce
+  (cancella + ricrea), non si modifica.
+- **Allegati sul task** — `list_taskattachments` / `retrieve_taskattachments` (path:
+  `task_id`), **sola lettura via MCP**: l'upload sul task avviene solo dall'app.
+
+**Creare un allegato di company/progetto** — `create_attachments` accetta esattamente
+UNO tra:
+- `text` — salvato come file di testo/markdown (richiede `file_name`)
+- `content_base64` — binario base64 (richiede `file_name` e `content_type`)
+- `link` — un URL http(s), es. Google Drive/Figma/una pagina web (nessun file_name)
+
+Contenuto inline (`text`/`content_base64`) è **capped a 4 MB** — oltre, carica su Drive
+e passa l'URL come `link`. Tipi di file ammessi: immagini, PDF, testo semplice, CSV,
+documenti Office e zip.
+
+```
+# nota testuale su un progetto
+create_attachments(company_id=1, body={
+  "project_id": 7,
+  "text": "## Decisione\nUsiamo Resend per le mail transazionali.",
+  "file_name": "decisione-mail-provider.md"
+})
+
+# link a un file Drive
+create_attachments(company_id=1, body={
+  "project_id": 7,
+  "link": "https://drive.google.com/file/d/..."
+})
+```
+
+### Dipendenze tra task
+
+**Quando serve:** modellare "X non può iniziare finché Y non finisce" (o varianti) per
+pianificazione/Gantt, o capire cosa blocca cosa prima di dire a qualcuno "puoi partire".
+
+`list/retrieve/create/update/partial_update/destroy_taskdependencys` (path:
+`company_id` + `project_id`). Ogni dipendenza ha un `predecessor`, un `successor`, un
+`dependency_type` — **FS** (finish-to-start, default: il successor parte dopo che il
+predecessor finisce), **SS** (start-to-start), **FF** (finish-to-finish), **SF**
+(start-to-finish) — e `lag_days` (può essere negativo, sposta il vincolo).
+
+Creare/aggiornare una dipendenza **ripropaga automaticamente** le date pianificate del
+successor (auto-schedule) se il nuovo vincolo lo richiede. Rifiutata con 400 su
+self-link, dipendenza cross-progetto, relazione antenato/discendente, o se crea un
+ciclo. Cancellare una dipendenza non riporta indietro le date già spostate.
+
+```
+create_taskdependencys(company_id=1, project_id=7, body={
+  "predecessor": 1200,
+  "successor": 1234,
+  "dependency_type": "FS",
+  "lag_days": 2
+})
+```
+
+`list_taskdependencys` **non ha un filtro per singolo task via MCP** — lato REST
+esiste un param `?task=<id>` (matcha sia da predecessor che da successor), ma il body
+del tool accetta solo `company_id`/`project_id`, quindi quel filtro non è
+raggiungibile. Per le dipendenze di un task specifico chiama
+`list_taskdependencys(company_id=.., project_id=..)` e filtra tu il risultato dove
+`predecessor` o `successor` è quel task.
+
+### Stati del task (`status`)
+
+Il campo `status` ha **quattro valori**: `BACKLOG`, `TODO`, `IN_PROGRESS`, `DONE`. Usalo per riflettere dove si trova il task nel flusso di lavoro, non solo per marcarlo finito — es. quando l'utente dice "ci sto lavorando" o "inizio X", porta il task a `IN_PROGRESS` con `partial_update_tasks(status: "IN_PROGRESS")` (vedi anche la nota su IN_PROGRESS e assegnatari sopra).
 
 ### "Ho finito X" / "Segna come completato"
 Usa `partial_update_tasks` con questi campi insieme: `is_completed: true, progress: 100, status: "DONE"`. Il backend tratta i tre "segnali done" come invariante (vedi `Task.save()` in `core.models`) — settandone uno solo, gli altri vengono comunque sincronizzati, ma esplicitare tutti e tre rende l'intent chiaro e indipendente da future modifiche al backend.
@@ -206,7 +340,40 @@ Non tutti i progetti seguono Scrum. La modalità è una **preferenza per progett
 
 Quando l'utente NON usa Scrum (o non lo ha indicato in memoria) **non menzionare mai** sprint/grooming/velocity in modo proattivo: stai sul workflow base (backlog, priorità, ordine).
 
-I tool MCP per gestire sprint dal lato agente (`list_sprints`, `start_sprints`, `close_sprints`, `move_to_sprint_tasks`, `move_sprint_lanes`, ...) saranno disponibili dopo il deploy della relativa feature backend. Se non li trovi nella lista tool, gestisci sprint chiedendo all'utente di farlo dall'UI e limita la skill al backlog/task.
+**CRUD sprint** — nessun path param (lo sprint è scoped alle company dell'utente via
+query, non via URL):
+
+- `list_sprints` / `retrieve_sprints` — filtra per `state` (`PLANNED`|`ACTIVE`|`CLOSED`) e per `project_id`; usa `list_sprints(state="ACTIVE", project_id=<id>)` per trovare lo sprint attivo *di un progetto specifico* — senza `project_id` la ricerca copre gli sprint di tutti i progetti delle company dell'utente.
+- `create_sprints` — `project_id` nel body (non nel path), `name`, `start_date`/`end_date`. Nasce sempre in `PLANNED`.
+- `update_sprints` / `partial_update_sprints` — nome, date, note; **non** per cambiare stato (vedi sotto).
+- `destroy_sprints` — solo se `PLANNED`; su uno sprint ACTIVE/CLOSED torna 409, va chiuso invece di cancellato.
+
+**Ciclo di vita — tool dedicati, non `partial_update_sprints`:**
+
+- `start_sprints` (pk = sprint) — `PLANNED → ACTIVE`. Fallisce se un altro sprint dello
+  stesso progetto è già ACTIVE: **un solo sprint attivo per progetto**.
+- `close_sprints` (pk = sprint) — `ACTIVE → CLOSED`. I task non-DONE vanno a
+  `carry_over_to` (id dello sprint successivo) se passato, altrimenti tornano nel
+  product backlog (`sprint=null`).
+
+```
+create_sprints(body={"project_id": 7, "name": "Sprint 12", "start_date": "2026-08-10", "end_date": "2026-08-21"})
+start_sprints(pk=44)
+...
+close_sprints(pk=44, body={"carry_over_to": 45})
+```
+
+**Spostare i task dentro/fuori sprint** — `move_to_sprint_tasks` (nessun path param):
+`task_ids` (lista non vuota, tutti nello stesso progetto) + `sprint_id` (`null` =
+backlog). Sposta anche i discendenti dei task passati. Rifiutato su sprint chiusi.
+
+```
+move_to_sprint_tasks(body={"task_ids": [1234, 1235], "sprint_id": 44})
+```
+
+Per la **board kanban dello sprint** (colonne, non solo "quali task ci sono") — le
+lanes — vedi `references/collaboration.md`: è una famiglia a bassa frequenza, non è
+qui.
 
 ### Fine sessione di lavoro
 Se hai completato del lavoro significativo, proponi di registrare i task completati o creare task per il follow-up in ProWoDo.
@@ -237,6 +404,7 @@ Quando l'utente chiede "cosa hai fatto?" o "aggiorna i task", aggiorna i task Pr
 | Sotto-task (indent) | `increase_depth_tasks` / `decrease_depth_tasks` |
 | Lista utenti company | `list_users` (path: `company_id`, supporta `search`) |
 | Dettaglio utente | `retrieve_users` |
+| Utente corrente ("io") | `retrieve_current_user` (nessun parametro) |
 | Assegna utente a task | `task_assign_user` (`pk` + `body.user_id`, idempotente) |
 | Rimuovi utente da task | `task_unassign_user` (`pk` + `body.user_id`, noop-safe) |
 | Lista reminder di un task | `list_reminders` (path: `task_id`) |
@@ -344,11 +512,25 @@ Il campo è `is_archivied` (typo del backend, non `is_archived`).
 - Se un default risulta archiviato, **avvisa l'utente** e chiedi un'alternativa attiva (di solito il team ha consolidato il lavoro altrove). Aggiorna la memoria.
 - Se l'utente cita un progetto per nome che non appare in `list_projects`, fai un `retrieve_projects` per id (se lo conosci) o segnala "non trovato tra gli attivi, potrebbe essere archiviato".
 
-### `move_to_project_tasks`: schema MCP incompleto, tool non invocabile (verificato 2026-05-25)
+### `move_to_project_tasks`: come si usa
 
-Il tool MCP `move_to_project_tasks` espone solo `pk` nello schema, ma il viewset richiede `project_id` nel body HTTP. Passare `project_id` (o `body`, `data`, `project`) dentro `kwargs` viene espanso come keyword argument al metodo del viewset e rifiutato con `got an unexpected keyword argument`. Al momento il tool non è invocabile dall'agente.
+Per spostare un task in un altro progetto (anche di un'altra company) chiama `move_to_project_tasks` con `pk=<task_id>` e `body={"project_id": <target_project_id>, "company_id": <target_company_id>}`. Lo schema MCP accetta entrambi i campi nel body — il task mantiene ID e passa al nuovo progetto/company. Non serve ricrearlo né cancellare l'originale.
 
-**Workaround:** ricrea il task in destinazione con `create_tasks(project_id=<target>)` (copia title/description/priority/story_points/status) e cancella l'originale con `destroy_tasks`. Perdi l'ID originale e l'order, ma è funzionalmente equivalente. Avvisa l'utente del nuovo ID.
+## Documentazione di riferimento
+
+Questo file copre i flussi ad alta frequenza. Il backend espone **82 tool MCP** in
+totale — le famiglie rimanenti sono in due file separati per non caricarle in ogni
+sessione quando non servono:
+
+- **`references/tools.md`** — tabella completa di tutti gli 82 tool, raggruppati per
+  famiglia, con path param richiesti e una frase di scopo per ciascuno. Apri questo
+  file quando ti serve l'elenco completo o il nome esatto di un tool che non ricordi.
+- **`references/collaboration.md`** — le famiglie a bassa frequenza con "quando serve"
+  ed esempio: ticket (`retrieve_ticketsubmissions`, `*_ticketcomments`, flag
+  `is_internal`), resume entry (piano/fatto giornaliero), CRUD tag oltre
+  `add_tag_tasks`/`remove_tag_tasks`, CRUD progetti, lanes della board sprint. Apri
+  questo file quando l'utente chiede esplicitamente una di queste cose — non
+  precaricarlo per il workflow base.
 
 ## Regole
 
