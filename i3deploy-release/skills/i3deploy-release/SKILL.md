@@ -167,6 +167,36 @@ Synthesize, don't dump: a changelog is a curated story, not a commit log paste.
 5. Show the final payload, confirm, then create:
    `create_project_releases({"body": {project, title, short, markdown_users, markdown_techies, version_numeric, authored_by, service_releases: [{service, version}, ...]}})`.
 
+## Step 4 (optional) — restrict a release to an audience
+
+Only when the user asks for it — "questa la vedono solo i beta tester", "uguale
+ma con una nota in più per lo staff". A project can define **audiences** (`beta`,
+`staff`, …), each with its own feed URL that the user has configured in their
+frontend.
+
+1. `list_release_audiences({"body": {}})` and filter `.results` by the project
+   slug. **No audiences for this project → stop and ask**: creating one is a
+   deliberate act with a setup step on the frontend, not something to infer from
+   a release request.
+2. Decide what the tag means here:
+   - **restricted** — only that audience sees it: tag it *and* set
+     `published: false`, so it stays out of the open feed.
+   - **same release, different text** — leave `published: true` and give the tag
+     its own `markdown_users` (and `title`/`short` if they differ). The open feed
+     keeps the base text; the audience's feed shows the override.
+3. **Gate on this explicitly.** Restricting a release is a visibility decision, so
+   say plainly which feed each version of the text lands in, and get a yes.
+   Show the `published` value — it's the difference between "everyone sees this"
+   and "only they do".
+4. Pass `audiences: [{audience: "<slug>", markdown_users?, title?, short?}]` in the
+   same `create_project_releases` call. Fields you leave out inherit the release's.
+
+Two things to say out loud when this comes up, because they surprise people:
+- The restricted feed contains the published releases **too**, not only the
+  tagged ones — so the frontend fetches one URL, not two.
+- The protection is the unguessable filename on a public bucket, not a login.
+  Don't put anything in there that would be a real problem if it leaked.
+
 ## `authored_by`
 
 Set it to reflect who really wrote the notes:
@@ -181,7 +211,10 @@ mention it as a possible follow-up rather than faking it.
 
 - **No discovery** (where i3deploy is wired / a feed of recent releases) — that's a
   separate piece.
-- **No update or delete** — the phase-1 MCP only lists, retrieves, and creates.
+- **No update or delete of releases** — for projects, services and both release
+  types the MCP only lists, retrieves, and creates. (Audiences are the one
+  exception: they can be updated and deleted, since rotating a leaked feed URL
+  has to be possible from here.)
 - **No curl fallback** — if the MCP isn't connected, set it up (above) and retry.
 
 ## Field reference

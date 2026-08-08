@@ -1,7 +1,7 @@
 {
   "name": "i3deploy-release",
-  "version": "0.2.0",
-  "description": "Cut i3deploy releases from Claude Code — ServiceRelease + ProjectRelease (user-facing & technical changelogs). Drafts notes from git + the current session + memory + whichever task manager you use (ProWoDo, Jira, Linear, GitHub Issues — or none), dedups against existing versions, and publishes via the bundled i3deploy MCP server (OAuth, no API key). Auto-triggers on release/changelog mentions.",
+  "version": "0.3.0",
+  "description": "Cut i3deploy releases from Claude Code — ServiceRelease + ProjectRelease (user-facing & technical changelogs). Drafts notes from git + the current session + memory + whichever task manager you use (ProWoDo, Jira, Linear, GitHub Issues — or none), dedups against existing versions, and publishes via the bundled i3deploy MCP server (OAuth, no API key). Can target a release at a named audience (beta testers, staff) with its own changelog text and its own feed. Auto-triggers on release/changelog mentions.",
   "author": {
     "name": "i3deploy",
     "email": "hello@i3deploy.com",

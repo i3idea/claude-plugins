@@ -9,10 +9,11 @@ OAuth it comes from your account's memberships (see the org notes in `SKILL.md`)
 **Every tool wraps its arguments under a `body` key.** Example:
 `create_service_releases({"body": { ... }})`.
 
-There are 11 tools: `{list,retrieve,create}` × `{projects, service_releases,
-project_releases}` plus `{list,create}_services`. The four you need for releases
+There are 15 tools: `{list,retrieve,create}` × `{projects, service_releases,
+project_releases}`, plus `{list,create}_services`, plus
+`{list,create,update,destroy}_release_audiences`. The four you need for releases
 are documented below; the project/service create+list tools are summarized at the
-end.
+end, and audiences have their own section.
 
 ## Important: list tools are PAGINATED + org-wide (no server-side filter yet)
 
@@ -70,11 +71,19 @@ Returns the created service release. `version_major/minor/patch` are derived fro
 | `version_numeric` | string | yes | semver, e.g. `2.3.0` |
 | `authored_by` | `"human"` \| `"ai"` | no | default `human` |
 | `service_releases` | array of `{service, version}` | no | the ServiceReleases this bundles; each must already exist in the org |
+| `audiences` | array of `{audience, title?, short?, markdown_users?}` | no | tags the release for those audiences (see below); `audience` is the audience slug, and it must belong to **this** project |
+| `published` | bool | no | default `true`; `false` keeps it out of the open public feed |
 
 Returns the created project release (with `version_uuid` and derived
 `version_major/minor/patch`). The nested `service_releases` are resolved by
 `(service slug, version)` within the org — referencing a release from another org
 fails (by design).
+
+The nested `audiences` follow the same replace semantics as `service_releases`:
+passing the key **replaces** the release's whole set of tags, omitting it leaves
+the existing ones untouched, and `[]` clears them. Each text field left empty
+inherits the release's own — so tagging without rewriting anything is the cheap
+default.
 
 ## list_service_releases / list_project_releases
 
@@ -85,6 +94,45 @@ fails (by design).
 
 Each item carries `version` / `version_numeric`, `created_at`, and (for service
 releases) `commit_sha` — which you use to anchor the next `commit_range`.
+
+## Audiences — `{list,create,update,destroy}_release_audiences`
+
+An **Audience** is a named public for a project's releases (`beta`, `staff`,
+`enterprise`). The vocabulary is **per project**: the same slug can exist in
+several projects and they are different audiences.
+
+Each active audience owns its own feed on the public bucket, at a path whose
+filename embeds a secret `feed_key`. That feed carries the project's published
+releases **plus** the releases tagged for that audience — including unpublished
+ones — each rendered with its per-audience text when one was written. So a
+frontend does a single fetch and gets "the public stuff plus mine".
+
+| field | type | required | notes |
+|---|---|---|---|
+| `project` | string (slug) | yes on create | **create-only** — an update never moves an audience to another project |
+| `slug` | string | yes on create | unique per project, e.g. `beta` |
+| `name` | string | yes on create | human label, e.g. "Beta tester" |
+| `is_active` | bool | no | default `true`; `false` stops the feed file being written (and deletes the existing one) |
+| `feed_url` | string | read-only | the URL to paste into the customer's frontend |
+| `rotate_feed_key` | bool | write-only, update only | `true` → new secret URL; the previous one stops working |
+
+`update_release_audiences` and `destroy_release_audiences` take the audience's
+`id`: `{"body": {"id": <pk>, ...}}`.
+
+> **`feed_url` is a credential, not a link.** The feed sits on a world-readable
+> bucket and the only thing protecting it is that its filename is unguessable.
+> Treat the URL like a password: hand it to the user, don't paste it into a
+> ticket, a commit message or a public channel. Never put in a restricted feed
+> anything that would be a real problem if it leaked — the use case is the
+> early changelog, not the industrial secret. Rotation revokes from that moment
+> on, never retroactively.
+
+Typical use from this skill: the user asks for a release "solo per i beta
+tester", or "uguale ma con una nota in più per lo staff". Read the project's
+audiences with `list_release_audiences`, then pass `audiences` to
+`create_project_releases`. Creating a *new* audience is a rarer, deliberate act —
+confirm the slug and name with the user first, and tell them the resulting
+`feed_url` has to be configured in their frontend before the feed is of any use.
 
 ## Supporting tools
 

@@ -21,6 +21,8 @@ ProWoDo, no other i3idea product.
   semver bump instead of colliding
 - Separates user-facing vs technical notes for project releases, with interactive
   confirmation before every write
+- Can target a release at a named **audience** (beta testers, staff), with its own
+  changelog text and its own feed — on request, behind an explicit confirmation
 - Publishes via the i3deploy MCP tools (never raw curl)
 
 ## Install
