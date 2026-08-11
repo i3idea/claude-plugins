@@ -18,7 +18,7 @@
       "source": "./i3deploy-release",
       "category": "development",
       "description": "Cut i3deploy releases (ServiceRelease + ProjectRelease, user/technical changelogs) from Claude Code or claude.ai. Drafts from git + session + memory + whichever task manager you use, dedups, and publishes via the bundled i3deploy MCP server (OAuth, no API key). Can target a release at a named audience with its own changelog and feed. Standalone — no ProWoDo required.",
-      "version": "0.3.0"
+      "version": "0.3.1"
     }
   ]
 }

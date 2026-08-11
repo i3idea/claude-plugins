@@ -68,7 +68,7 @@ Returns the created service release. `version_major/minor/patch` are derived fro
 | `short` | string | no | short blurb, ≤512 chars |
 | `markdown_users` | string (markdown) | no | **user-facing** notes |
 | `markdown_techies` | string (markdown) | no | **technical** notes |
-| `version_numeric` | string | yes | semver, e.g. `2.3.0` |
+| `version_numeric` | string | yes | semver, e.g. `2.3.0` (**unique per project** — dedup!) |
 | `authored_by` | `"human"` \| `"ai"` | no | default `human` |
 | `service_releases` | array of `{service, version}` | no | the ServiceReleases this bundles; each must already exist in the org |
 | `audiences` | array of `{audience, title?, short?, markdown_users?}` | no | tags the release for those audiences (see below); `audience` is the audience slug, and it must belong to **this** project |
@@ -78,6 +78,15 @@ Returns the created project release (with `version_uuid` and derived
 `version_major/minor/patch`). The nested `service_releases` are resolved by
 `(service slug, version)` within the org — referencing a release from another org
 fails (by design).
+
+Reusing a `version_numeric` inside the same project is a **400**, not a duplicate:
+`{"non_field_errors": ["This project already has a release with this
+version_numeric. A project version names exactly one release — bump the version
+instead of reusing it."]}`. The reason it is enforced rather than merely
+discouraged: the public feed exposes `version` and **no uuid**, so the version is
+the only identifier a consumer has — two releases sharing one makes every
+version-keyed changelog ambiguous. (It happened twice in production before the
+constraint existed.) Same version in a *different* project is fine.
 
 The nested `audiences` follow the same replace semantics as `service_releases`:
 passing the key **replaces** the release's whole set of tags, omitting it leaves

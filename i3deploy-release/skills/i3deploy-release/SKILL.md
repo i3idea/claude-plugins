@@ -74,11 +74,16 @@ surprise.
 ## Core principles
 
 - **Read before you write (dedup).** Always `list_*` (and `retrieve_*` if needed)
-  the existing releases first. `ServiceRelease` is unique per `(service, version)`
-  and a `ProjectRelease.version_numeric` shouldn't collide — if the version you'd
-  use already exists, don't try to create it; show the latest and propose the next
-  semver bump instead. This also gives you the previous release's `commit_sha`,
-  which anchors the new git range.
+  the existing releases first. **Both release types are unique**: `ServiceRelease`
+  per `(service, version)`, `ProjectRelease` per `(project, version_numeric)`. The
+  server enforces both, so reusing a version is a `400`, never a silent duplicate:
+  `"This project already has a release with this version_numeric. A project
+  version names exactly one release — bump the version instead of reusing it."`
+  Reading first is still the point: not to dodge an error, but to propose the
+  *right* next version instead of guessing. If the version you'd use already
+  exists, don't try to create it — show the latest and propose the next semver
+  bump. Reading also gives you the previous release's `commit_sha`, which anchors
+  the new git range.
 - **No releases yet → this is the FIRST release.** If the filtered list is empty
   for this service/project, don't get stuck looking for a "latest": say so and
   **propose creating the initial release**. Default to **`0.1.0`** (or `1.0.0` if
