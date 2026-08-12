@@ -15,20 +15,35 @@ project_releases}`, plus `{list,create}_services`, plus
 are documented below; the project/service create+list tools are summarized at the
 end, and audiences have their own section.
 
-## Important: list tools are PAGINATED + org-wide (no server-side filter yet)
+## Important: list tools are PAGINATED — always filter server-side
 
 The `list_*` tools return a **paginated object**, not a bare array:
 `{"count": N, "page_size": 25, "max_page_size": 100, "pages": P, "links": {...}, "results": [ ... ]}`.
 **Read the rows from `.results`** (in both `structuredContent` and the parsed
-`content[0].text`). Use `?page` / `?page_size` (max 100) if you need more than the
-first page — pass them in the `body`, e.g. `{"body": {"page_size": 100}}`.
+`content[0].text`).
 
-There is no `service`/`project` body filter yet, so to find "the latest release of
-service X", read `.results`, **filter client-side** by the `service`/`project`
-slug, then pick the highest `version` / `version_numeric`. **If `.results` is empty
-for that service/project → it's the first release** (propose `0.1.0`/`1.0.0`).
-(The REST `?project=` query param exists for `project-releases` but isn't exposed
-through MCP in phase 1.)
+**Never scan `.results` client-side to find a service's releases.** The default
+page holds 25 rows out of hundreds, so a client-side scan of page 1 usually finds
+nothing for your service — and "nothing" is exactly what the skill reads as *this
+is the first release, propose `0.1.0`*. That failure mode is silent and it has
+happened. Filter on the server instead:
+
+| tool | filters |
+|---|---|
+| `list_service_releases` | `service`, `project`, `version` |
+| `list_project_releases` | `project`, `version_numeric`, `published` |
+| `list_release_audiences` | `project`, `slug`, `is_active` |
+| `list_services` | `project`, `slug` |
+| `list_projects` | `slug` |
+
+Every list tool also takes `page` and `page_size` (max 100). So the right call is
+`{"body": {"service": "pwd-backend", "page_size": 100}}`, not a bare
+`{"body": {}}` followed by filtering.
+
+**Only after a filtered call comes back empty is it the first release** (propose
+`0.1.0`/`1.0.0`). Check `count` and `pages` in the response to be sure you have
+everything; the `links.next`/`links.previous` URLs are not usable over MCP (they
+are built from the MCP endpoint's host) — page with `page` instead.
 
 `retrieve_*` look up a single row by its id:
 - `retrieve_service_releases` → `{"body": {"id": <pk>}}`
