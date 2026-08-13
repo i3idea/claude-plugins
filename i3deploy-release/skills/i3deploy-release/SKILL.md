@@ -134,8 +134,14 @@ Synthesize, don't dump: a changelog is a curated story, not a commit log paste.
 1. Read `i3version/deploy.json` in the repo root → `service`, `base_url`, and the
    env. The org comes from the connector's key.
 2. `list_service_releases({"body": {"service": "<slug>", "page_size": 100}})` →
-   a **paginated object**; read the rows from **`.results`**, then take the highest
-   `version` to find the latest and its `commit_sha`. (Dedup + range anchor.)
+   a **paginated object**; read the rows from **`.results`**. The server already
+   returns them newest-version-first, so the latest release is **`.results[0]`** —
+   take its `commit_sha` as the range anchor. (Dedup + range anchor.)
+   **Do not sort by `version` yourself.** It is free text, not guaranteed semver:
+   deploys record rows whose version is a bare commit sha, and comparing those as
+   strings puts `9323285` above `1.0.0` — which is how "the latest release of
+   `pwd-site`" once came back as a July commit instead of the August `1.0.0`.
+   Trust the server's order.
    **Filter on the server, never by scanning page 1**: the default page is 25 rows
    out of hundreds, so a client-side scan finds nothing for your service and you
    would read that as "first release". **If the filtered `.results` is empty → it

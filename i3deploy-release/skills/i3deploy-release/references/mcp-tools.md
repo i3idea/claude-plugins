@@ -30,15 +30,36 @@ happened. Filter on the server instead:
 
 | tool | filters |
 |---|---|
-| `list_service_releases` | `service`, `project`, `version` |
+| `list_service_releases` | `service`, `project`, `version`, `include_stubs` |
 | `list_project_releases` | `project`, `version_numeric`, `published` |
 | `list_release_audiences` | `project`, `slug`, `is_active` |
 | `list_services` | `project`, `slug` |
 | `list_projects` | `slug` |
 
-Every list tool also takes `page` and `page_size` (max 100). So the right call is
-`{"body": {"service": "pwd-backend", "page_size": 100}}`, not a bare
+Every list tool also takes `page`, `page_size` (max 100) and `organization`. So the
+right call is `{"body": {"service": "pwd-backend", "page_size": 100}}`, not a bare
 `{"body": {}}` followed by filtering.
+
+### `version` is free text — never sort it yourself
+
+Rows are returned newest-version-first, so **the latest release is `.results[0]`**.
+Do not rank them client-side: `version` is a `CharField`, not a semver type. A
+deploy auto-creates a `ServiceRelease` for whatever version it reports, and with no
+tag in the repo `git describe --tags --always` reports a bare commit sha — compared
+as strings, `9323285` sorts above `1.0.0`. That is how "the latest release of
+`pwd-site`" once came back as a July commit instead of the August `1.0.0`.
+
+Those deploy-created rows are flagged `is_deploy_stub` and **excluded by default**
+(they carry an empty changelog). Pass `include_stubs: true` only when you actually
+want deploy bookkeeping. So an empty filtered result really does mean "no release
+yet" — a stub can no longer masquerade as one.
+
+### `count` depends on how you are connected
+
+The connector is an OAuth user and sees **every organization you belong to**; an API
+key is bound to exactly one. The same query can therefore report a different `count`
+over MCP than over REST, with neither being wrong. Pass `organization: "<slug>"` to
+pin one.
 
 **Only after a filtered call comes back empty is it the first release** (propose
 `0.1.0`/`1.0.0`). Check `count` and `pages` in the response to be sure you have
