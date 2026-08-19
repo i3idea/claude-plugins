@@ -36,7 +36,7 @@ lanciare `/mcp` e completare il login OAuth nel browser. Non ripiegare su `curl`
 ## Flusso base
 
 1. **Controlla la memoria di progetto** (`prowodo_defaults.md` nella memory dir corrente — vedi sezione "Defaults di progetto in memoria"). Se esiste, usa company/project/scrum come default.
-2. Altrimenti **lista le company** con `list_companys` e **i progetti** con `list_projects` (passa `company_id`). **Controlla il campo `is_archivied`** (sic, typo backend) su ogni progetto: non proporre progetti archiviati come destinazione e non scriverci task. Se l'unico match è archiviato, segnalalo all'utente e chiedi un'alternativa.
+2. Altrimenti **lista le company** con `list_companies` e **i progetti** con `list_projects` (passa `company_id`). **Controlla il campo `is_archivied`** (sic, typo backend) su ogni progetto: non proporre progetti archiviati come destinazione e non scriverci task. Se l'unico match è archiviato, segnalalo all'utente e chiedi un'alternativa.
 3. Quando hai capito company + project + se l'utente usa scrum, **proponi di salvarlo in memoria** (vedi sezione apposita) per evitare di richiederlo ogni volta.
 4. Agisci in base all'intenzione dell'utente (vedi sezioni sotto).
 
@@ -95,8 +95,8 @@ Usa `create_tasks`. Chiedi il progetto se non specificato.
 Per assegnare un task a un **altro** utente (non "me"):
 
 1. Risolvi il nome utente in `user_id` con `list_users` (path param: `company_id`). Lo viewset supporta search via `search_fields` su email/username/first_name/last_name/display_name/identity_email — passa la stringa di ricerca come parametro `search` se l'utente cita un nome libero ("Ivan").
-2. Chiama `task_assign_user` con `pk=<task_id>` e `body={"user_id": <id>}`. È **idempotente** — chiamarlo due volte non crea duplicati né errore.
-3. Per rimuovere: `task_unassign_user` con stesso shape. Ritorna `{"unassigned": true|false}`. **Noop-safe** — chiamarlo su un'assegnazione che non esiste non solleva errore.
+2. Chiama `assign_user_tasks` con `pk=<task_id>` e `body={"user_id": <id>}`. È **idempotente** — chiamarlo due volte non crea duplicati né errore.
+3. Per rimuovere: `unassign_user_tasks` con stesso shape. Ritorna `{"unassigned": true|false}`. **Noop-safe** — chiamarlo su un'assegnazione che non esiste non solleva errore.
 
 **Sicurezza:** il backend rifiuta con 400 se `user_id` punta a un utente NON membro della company del task (cross-tenant). Niente leak.
 
@@ -106,7 +106,7 @@ Esempio flow tipico — "Assegna il task #1234 a Ivan":
 ```
 1. list_users(company_id=1, search="Ivan")
    → [{id: 42, display_name: "Ivan Bettarini", ...}]
-2. task_assign_user(pk=1234, body={user_id: 42})
+2. assign_user_tasks(pk=1234, body={user_id: 42})
    → 201 {id: ..., task_id: 1234, user_id: 42}
 ```
 
@@ -223,7 +223,7 @@ create_attachments(company_id=1, body={
 **Quando serve:** modellare "X non può iniziare finché Y non finisce" (o varianti) per
 pianificazione/Gantt, o capire cosa blocca cosa prima di dire a qualcuno "puoi partire".
 
-`list/retrieve/create/update/partial_update/destroy_taskdependencys` (path:
+`list/retrieve/create/update/partial_update/destroy_taskdependencies` (path:
 `company_id` + `project_id`). Ogni dipendenza ha un `predecessor`, un `successor`, un
 `dependency_type` — **FS** (finish-to-start, default: il successor parte dopo che il
 predecessor finisce), **SS** (start-to-start), **FF** (finish-to-finish), **SF**
@@ -235,7 +235,7 @@ self-link, dipendenza cross-progetto, relazione antenato/discendente, o se crea 
 ciclo. Cancellare una dipendenza non riporta indietro le date già spostate.
 
 ```
-create_taskdependencys(company_id=1, project_id=7, body={
+create_taskdependencies(company_id=1, project_id=7, body={
   "predecessor": 1200,
   "successor": 1234,
   "dependency_type": "FS",
@@ -248,7 +248,7 @@ sia le dipendenze che lo bloccano, sia quelle che dipendono da lui. Senza, ricev
 l'intero grafo del progetto.
 
 ```
-list_taskdependencys(company_id=1, project_id=7, task=1234)
+list_taskdependencies(company_id=1, project_id=7, task=1234)
 ```
 
 ### Stati del task (`status`)
@@ -392,7 +392,7 @@ Quando l'utente chiede "cosa hai fatto?" o "aggiorna i task", aggiorna i task Pr
 
 | Azione | Tool |
 |--------|------|
-| Lista company | `list_companys` |
+| Lista company | `list_companies` |
 | Lista progetti | `list_projects` |
 | Lista task | `list_tasks` |
 | Dettaglio task | `retrieve_tasks` |
@@ -406,8 +406,8 @@ Quando l'utente chiede "cosa hai fatto?" o "aggiorna i task", aggiorna i task Pr
 | Lista utenti company | `list_users` (path: `company_id`, supporta `search`) |
 | Dettaglio utente | `retrieve_users` |
 | Utente corrente ("io") | `retrieve_current_user` (nessun parametro) |
-| Assegna utente a task | `task_assign_user` (`pk` + `body.user_id`, idempotente) |
-| Rimuovi utente da task | `task_unassign_user` (`pk` + `body.user_id`, noop-safe) |
+| Assegna utente a task | `assign_user_tasks` (`pk` + `body.user_id`, idempotente) |
+| Rimuovi utente da task | `unassign_user_tasks` (`pk` + `body.user_id`, noop-safe) |
 | Lista reminder di un task | `list_reminders` (path: `task_id`) |
 | Crea reminder | `create_reminders` (path: `task_id` + body) |
 | Aggiorna reminder | `partial_update_reminders` |
@@ -453,7 +453,7 @@ type: project
 ```
 
 **Come usarli:**
-- All'inizio di ogni sessione che riguarda task/planning, **prima** di chiamare `list_companys` / `list_projects`, leggi il file (se esiste) e procedi direttamente con i default.
+- All'inizio di ogni sessione che riguarda task/planning, **prima** di chiamare `list_companies` / `list_projects`, leggi il file (se esiste) e procedi direttamente con i default.
 - **Verifica che il progetto di default non sia archiviato** prima di scriverci: una `list_projects` (o `retrieve_projects` se disponibile) e controllo di `is_archivied`. Se lo è, avvisa l'utente e chiedi un'alternativa attiva invece di operare silenziosamente.
 - I default **non sono vincolanti**: se l'utente cita un altro progetto/company nella conversazione, segui quello senza chiedere e senza modificare la memoria. Aggiorni la memoria solo se l'utente dice esplicitamente "cambia il progetto di default" / "ora lavoro su X".
 - Se `uses_scrum=false`, non proporre flussi sprint/grooming/punti in modo proattivo. Se `uses_scrum=true`, applica le sezioni "Story points" e "Sprint / Scrum".

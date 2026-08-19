@@ -1,6 +1,6 @@
 # Elenco completo dei tool MCP ProWoDo
 
-Tabella generata dal backend (`grep -oP '^\s{4}"\K[a-z_]+(?=":)' pwd-backend/src/prowodo/core/api/mcp_descriptions.py | sort`) più `task_assign_user` / `task_unassign_user`, che portano la descrizione inline via `@mcp_tool(description=...)` invece che in `mcp_descriptions.py` e quindi non compaiono in quel grep — **82 tool** in totale. Vedi `SKILL.md` per i nomi nudi vs il prefisso reale del tool (`mcp__plugin_prowodo-tasks_prowodo__...` o equivalente) e per il flusso base.
+Tabella generata dal backend (`grep -oP '^\s{4}"\K[a-z_]+(?=":)' pwd-backend/src/prowodo/core/api/mcp_descriptions.py | sort`) più `assign_user_tasks` / `unassign_user_tasks`, che portano la descrizione inline via `@mcp_tool(description=...)` invece che in `mcp_descriptions.py` e quindi non compaiono in quel grep — **82 tool** in totale. Vedi `SKILL.md` per i nomi nudi vs il prefisso reale del tool (`mcp__plugin_prowodo-tasks_prowodo__...` o equivalente) e per il flusso base.
 
 "Path param" elenca solo i parametri **oltre** all'id della risorsa stessa (che per retrieve/update/partial_update/destroy va comunque passato, tipicamente come `pk`). "—" = nessun path param oltre eventualmente `pk`.
 
@@ -8,9 +8,9 @@ Tabella generata dal backend (`grep -oP '^\s{4}"\K[a-z_]+(?=":)' pwd-backend/src
 
 | Tool | Path param | Scopo |
 |------|-----------|-------|
-| `list_companys` | — | Lista le company (workspace) di cui l'utente è membro. |
-| `retrieve_companys` | — | Dettaglio di una company per id. |
-| `create_companys` | — | Crea una nuova company; l'utente che la crea ne diventa owner. |
+| `list_companies` | — | Lista le company (workspace) di cui l'utente è membro. |
+| `retrieve_companies` | — | Dettaglio di una company per id. |
+| `create_companies` | — | Crea una nuova company; l'utente che la crea ne diventa owner. |
 
 ## Membri della company
 
@@ -48,7 +48,7 @@ Tabella generata dal backend (`grep -oP '^\s{4}"\K[a-z_]+(?=":)' pwd-backend/src
 |------|-----------|-------|
 | `move_up_tasks` | — | Sposta il task di una posizione su tra i fratelli. |
 | `move_down_tasks` | — | Sposta il task di una posizione giù tra i fratelli. |
-| `move_relate_to_tasks` | — | Posiziona il task subito `before`/`after` un fratello (`related_task_id`). |
+| `move_relative_to_tasks` | — | Posiziona il task subito `before`/`after` un fratello (`related_task_id`). |
 | `increase_depth_tasks` | — | Indenta il task come figlio di un altro (`new_parent_id`). |
 | `decrease_depth_tasks` | — | Deindenta il task al livello del genitore, opzionalmente dopo `after_task_id`. |
 | `reorder_root_tasks` | — | Compatta gli `order` dei task root di un progetto (`project_id` nel body); manutenzione, non accetta liste. |
@@ -60,8 +60,8 @@ Tabella generata dal backend (`grep -oP '^\s{4}"\K[a-z_]+(?=":)' pwd-backend/src
 
 | Tool | Path param | Scopo |
 |------|-----------|-------|
-| `task_assign_user` | — | Aggiunge un utente come assegnatario di un task (`pk` + `body.user_id`); idempotente, rifiuta con 400 se l'utente non è membro della company del task. |
-| `task_unassign_user` | — | Rimuove un utente dagli assegnatari di un task (`pk` + `body.user_id`); noop-safe, non solleva errore se non era assegnato. |
+| `assign_user_tasks` | — | Aggiunge un utente come assegnatario di un task (`pk` + `body.user_id`); idempotente, rifiuta con 400 se l'utente non è membro della company del task. |
+| `unassign_user_tasks` | — | Rimuove un utente dagli assegnatari di un task (`pk` + `body.user_id`); noop-safe, non solleva errore se non era assegnato. |
 
 ## Tag
 
@@ -119,12 +119,12 @@ Non esistono `update_attachments`/`partial_update_attachments`: un allegato si s
 
 | Tool | Path param | Scopo |
 |------|-----------|-------|
-| `list_taskdependencys` | `company_id`, `project_id` | Lista le dipendenze di schedulazione di un progetto. Passa `task` per avere solo quelle che toccano un task, da entrambi i versi (chi lo blocca e chi ne dipende); senza, torna il grafo intero. |
-| `retrieve_taskdependencys` | `company_id`, `project_id` | Dettaglio di una dipendenza per id. |
-| `create_taskdependencys` | `company_id`, `project_id` | Collega due task dello stesso progetto (`dependency_type` FS/SS/FF/SF, `lag_days`); rifiutata (400) su self-link, cross-project, antenato/discendente, ciclo. |
-| `update_taskdependencys` | `company_id`, `project_id` | Sostituzione completa (PUT) di una dipendenza — richiede predecessor, successor, dependency_type, lag_days. |
-| `partial_update_taskdependencys` | `company_id`, `project_id` | Cambia `dependency_type` o `lag_days`; ripropaga lo scheduling del successor. |
-| `destroy_taskdependencys` | `company_id`, `project_id` | Rimuove una dipendenza; non riporta indietro le date già spostate in avanti. |
+| `list_taskdependencies` | `company_id`, `project_id` | Lista le dipendenze di schedulazione di un progetto. Passa `task` per avere solo quelle che toccano un task, da entrambi i versi (chi lo blocca e chi ne dipende); senza, torna il grafo intero. |
+| `retrieve_taskdependencies` | `company_id`, `project_id` | Dettaglio di una dipendenza per id. |
+| `create_taskdependencies` | `company_id`, `project_id` | Collega due task dello stesso progetto (`dependency_type` FS/SS/FF/SF, `lag_days`); rifiutata (400) su self-link, cross-project, antenato/discendente, ciclo. |
+| `update_taskdependencies` | `company_id`, `project_id` | Sostituzione completa (PUT) di una dipendenza — richiede predecessor, successor, dependency_type, lag_days. |
+| `partial_update_taskdependencies` | `company_id`, `project_id` | Cambia `dependency_type` o `lag_days`; ripropaga lo scheduling del successor. |
+| `destroy_taskdependencies` | `company_id`, `project_id` | Rimuove una dipendenza; non riporta indietro le date già spostate in avanti. |
 
 ## Sprint
 
@@ -161,12 +161,12 @@ Non esistono `update_attachments`/`partial_update_attachments`: un allegato si s
 
 | Tool | Path param | Scopo |
 |------|-----------|-------|
-| `list_resumeentrys` | `company_id` | Lista le resume entry di una company; filtra per `kind` (plan\|done), range date, `user_id`. |
-| `retrieve_resumeentrys` | `company_id` | Dettaglio di una resume entry per id. |
-| `create_resumeentrys` | `company_id` | Crea una entry (`kind`, `date_from`/`date_to`, `note`, `tasks` collegati opzionali). |
-| `update_resumeentrys` | `company_id` | Sostituzione completa (PUT) di una entry. |
-| `partial_update_resumeentrys` | `company_id` | Aggiornamento parziale (PATCH) di una entry. |
-| `destroy_resumeentrys` | `company_id` | Soft-delete di una entry. |
+| `list_resumeentries` | `company_id` | Lista le resume entry di una company; filtra per `kind` (plan\|done), range date, `user_id`. |
+| `retrieve_resumeentries` | `company_id` | Dettaglio di una resume entry per id. |
+| `create_resumeentries` | `company_id` | Crea una entry (`kind`, `date_from`/`date_to`, `note`, `tasks` collegati opzionali). |
+| `update_resumeentries` | `company_id` | Sostituzione completa (PUT) di una entry. |
+| `partial_update_resumeentries` | `company_id` | Aggiornamento parziale (PATCH) di una entry. |
+| `destroy_resumeentries` | `company_id` | Soft-delete di una entry. |
 
 ---
 

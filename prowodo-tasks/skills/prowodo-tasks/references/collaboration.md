@@ -10,7 +10,7 @@ nomi nudi vs il prefisso reale del tool MCP, vedi `SKILL.md`.
 **Quando serve:** l'utente chiede di leggere/gestire ticket clienti (widget di supporto
 sul sito), o di rispondere a chi ha aperto un ticket. Un ticket **è un Task** con una
 `TicketSubmission` collegata — per triage, stato, assegnazione usa i tool task normali
-(`list_tasks` con `has_ticket=true`, `partial_update_tasks`, `task_assign_user`); questa
+(`list_tasks` con `has_ticket=true`, `partial_update_tasks`, `assign_user_tasks`); questa
 famiglia copre solo l'intake e i commenti specifici del ticket.
 
 - `retrieve_ticketsubmissions` — metadati di apertura: chi ha aperto il ticket
@@ -49,18 +49,18 @@ colleghi", o per registrare tu stesso cosa hai pianificato/fatto in un giorno o 
 range — separato dai task veri e propri, è una nota di riepilogo eventualmente
 collegata a uno o più task.
 
-- `list_resumeentrys` (path: `company_id`) — filtra per `kind` (`plan`|`done`), range
+- `list_resumeentries` (path: `company_id`) — filtra per `kind` (`plan`|`done`), range
   `date_from`/`date_to`, `user_id`.
-- `retrieve_resumeentrys` — dettaglio per id.
-- `create_resumeentrys` — `kind`, `date_from`/`date_to`, `note` (testo libero), `tasks`
+- `retrieve_resumeentries` — dettaglio per id.
+- `create_resumeentries` — `kind`, `date_from`/`date_to`, `note` (testo libero), `tasks`
   opzionale (lista di id collegati). Più entry nello stesso giorno sono ammesse.
-- `update_resumeentrys` / `partial_update_resumeentrys` — sostituzione completa o
+- `update_resumeentries` / `partial_update_resumeentries` — sostituzione completa o
   parziale.
-- `destroy_resumeentrys` — soft-delete.
+- `destroy_resumeentries` — soft-delete.
 
 Esempio — registrare cosa è stato fatto oggi:
 ```
-create_resumeentrys(company_id=1, body={
+create_resumeentries(company_id=1, body={
   "kind": "done",
   "date_from": "2026-08-05",
   "date_to": "2026-08-05",
