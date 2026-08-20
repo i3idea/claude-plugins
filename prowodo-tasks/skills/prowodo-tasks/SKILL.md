@@ -191,7 +191,9 @@ Due famiglie distinte, non intercambiabili:
   chiede. Non esistono `update`/`partial_update_attachments`: un allegato si sostituisce
   (cancella + ricrea), non si modifica.
 - **Allegati sul task** — `list_taskattachments` / `retrieve_taskattachments` (path:
-  `task_id`), **sola lettura via MCP**: l'upload sul task avviene solo dall'app.
+  `task_id`), più `request_taskattachment_upload` per crearne uno via il flusso a
+  due passi sopra (nessun campo `comment_id` da passare: viene creato un
+  `TaskComment` contenitore automaticamente, come fa già l'upload dall'app).
 
 **Creare un allegato di company/progetto** — `create_attachments` accetta esattamente
 UNO tra:
@@ -217,6 +219,26 @@ create_attachments(company_id=1, body={
   "link": "https://drive.google.com/file/d/..."
 })
 ```
+
+**File più grandi o pesanti (oltre quanto conviene passare come `text`/`content_base64`)** —
+usa il flusso a due passi invece di `create_attachments`:
+
+1. `request_attachment_upload(company_id, project_id?, title?)` — nessun contenuto
+   file in questa chiamata. Risponde con `upload_url`, `method`, `file_field`,
+   `expires_at`, `max_bytes`, `allowed_content_types`.
+2. Fai una POST multipart a `upload_url` con il file nel campo indicato da
+   `file_field` — con qualunque client HTTP tu abbia a disposizione nel tuo
+   ambiente (non è prescritto un comando specifico: la risposta del punto 1
+   ti dice cosa mandare, non come). Il token in `upload_url` scade dopo
+   pochi minuti ed è monouso; se il file viene rifiutato (tipo/dimensione)
+   resta valido — riprova con un file diverso senza rifare il passo 1.
+3. La risposta di quella POST è l'allegato creato, con `app_url` incluso.
+
+Stesso flusso, stesso shape di risposta, per gli allegati sui **commenti dei
+task** (non sui commenti dei ticket, che restano fuori scope — vedi sotto):
+`request_taskattachment_upload(task_id)` → POST multipart → `TaskAttachment`
+creato, con un `TaskComment` contenitore auto-generato come fa già l'upload
+dall'app.
 
 ### Dipendenze tra task
 

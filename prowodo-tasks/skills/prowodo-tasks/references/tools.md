@@ -92,16 +92,18 @@ Tabella generata dal backend (`grep -oP '^\s{4}"\K[a-z_]+(?=":)' pwd-backend/src
 | `list_attachments` | `company_id` | Lista cosa è attaccato a una company o a un suo progetto (`project_id` per filtrare, `project_id__isnull=true` per i soli allegati di company). |
 | `retrieve_attachments` | `company_id` | Dettaglio di un allegato: titolo, `kind` (file/link), autore, `url` (signed, scade in 15 minuti per i file). |
 | `create_attachments` | `company_id` | Crea un allegato: esattamente uno tra `text`, `content_base64` (+`content_type`) o `link`; `project_id` opzionale (omesso = allegato di company); contenuto inline max 4MB. |
+| `request_attachment_upload` | body: `company_id`, `project_id?`, `title?` | Primo passo di un upload a due fasi per un Attachment: nessun file nella chiamata, risponde con `upload_url` da usare in una POST multipart separata. |
 | `destroy_attachments` | `company_id` | Soft-delete di un allegato della company. |
 
 Non esistono `update_attachments`/`partial_update_attachments`: un allegato si sostituisce (cancella + ricrea), non si modifica.
 
-## Allegati sul task (sola lettura via MCP)
+## Allegati sul task
 
 | Tool | Path param | Scopo |
 |------|-----------|-------|
-| `list_taskattachments` | `task_id` | Lista i file allegati a un task (nome, size, url). Upload solo dall'app. |
+| `list_taskattachments` | `task_id` | Lista i file allegati a un task (nome, size, url). |
 | `retrieve_taskattachments` | `task_id` | Metadati e url di download di un singolo allegato task. |
+| `request_taskattachment_upload` | body: `task_id` | Primo passo di un upload a due fasi per un TaskAttachment: nessun file nella chiamata, risponde con `upload_url` da usare in una POST multipart separata. |
 
 ## Reminder
 
