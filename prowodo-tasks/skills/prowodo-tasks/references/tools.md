@@ -1,6 +1,6 @@
 # Elenco completo dei tool MCP ProWoDo
 
-Tabella generata dal backend (`grep -oP '^\s{4}"\K[a-z_]+(?=":)' pwd-backend/src/prowodo/core/api/mcp_descriptions.py | sort`) più `assign_user_tasks` / `unassign_user_tasks`, che portano la descrizione inline via `@mcp_tool(description=...)` invece che in `mcp_descriptions.py` e quindi non compaiono in quel grep — **82 tool** in totale. Vedi `SKILL.md` per i nomi nudi vs il prefisso reale del tool (`mcp__plugin_prowodo-tasks_prowodo__...` o equivalente) e per il flusso base.
+Tabella generata dal backend (`grep -oP '^\s{4}"\K[a-z_]+(?=":)' pwd-backend/src/prowodo/core/api/mcp_descriptions.py | sort`) più `assign_user_tasks` / `unassign_user_tasks`, che portano la descrizione inline via `@mcp_tool(description=...)` invece che in `mcp_descriptions.py` e quindi non compaiono in quel grep — **92 tool** in totale. Vedi `SKILL.md` per i nomi nudi vs il prefisso reale del tool (`mcp__plugin_prowodo-tasks_prowodo__...` o equivalente) e per il flusso base.
 
 "Path param" elenca solo i parametri **oltre** all'id della risorsa stessa (che per retrieve/update/partial_update/destroy va comunque passato, tipicamente come `pk`). "—" = nessun path param oltre eventualmente `pk`.
 
@@ -169,6 +169,18 @@ Non esistono `update_attachments`/`partial_update_attachments`: un allegato si s
 | `update_resumeentries` | `company_id` | Sostituzione completa (PUT) di una entry. |
 | `partial_update_resumeentries` | `company_id` | Aggiornamento parziale (PATCH) di una entry. |
 | `destroy_resumeentries` | `company_id` | Soft-delete di una entry. |
+
+## Note (second brain / knowledge base)
+
+| Tool | Path param | Scopo |
+|------|-----------|-------|
+| `list_notes` | `company_id` | Lista le note di una company; filtra per `project_id` (e `project_id__isnull=true` per le note di company non legate a un progetto) o `title__icontains`. Non cerca nel body — per quello usa `search_notes`. |
+| `retrieve_notes` | `company_id` | Dettaglio di una nota per id. |
+| `create_notes` | `company_id` | Crea una nota (`title`, `content` markdown, `project_id` opzionale, `tags` opzionali per id). |
+| `update_notes` | `company_id` | Sostituzione completa (PUT) di una nota. |
+| `partial_update_notes` | `company_id` | Aggiornamento parziale (PATCH) di una nota. |
+| `destroy_notes` | `company_id` | Elimina una nota (hard-delete). |
+| `search_notes` | — (`company_id` nel body) | Full-text search su `title`+`content` in una company; `project_id` opzionale per restringere a un progetto. Usalo al posto di `list_notes` quando cerchi per contenuto, non per titolo/progetto. |
 
 ---
 

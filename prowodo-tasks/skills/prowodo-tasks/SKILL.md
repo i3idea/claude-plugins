@@ -541,11 +541,11 @@ Per spostare un task in un altro progetto (anche di un'altra company) chiama `mo
 
 ## Documentazione di riferimento
 
-Questo file copre i flussi ad alta frequenza. Il backend espone **82 tool MCP** in
+Questo file copre i flussi ad alta frequenza. Il backend espone **92 tool MCP** in
 totale — le famiglie rimanenti sono in due file separati per non caricarle in ogni
 sessione quando non servono:
 
-- **`references/tools.md`** — tabella completa di tutti gli 82 tool, raggruppati per
+- **`references/tools.md`** — tabella completa di tutti i 92 tool, raggruppati per
   famiglia, con path param richiesti e una frase di scopo per ciascuno. Apri questo
   file quando ti serve l'elenco completo o il nome esatto di un tool che non ricordi.
 - **`references/collaboration.md`** — le famiglie a bassa frequenza con "quando serve"
