@@ -174,8 +174,6 @@ Le note sono la knowledge base della company: markdown libero, opzionalmente leg
 - Prima di creare, se il tema può esistere già, fai una `search_notes` e proponi di aggiornare la nota esistente invece di duplicarla.
 - `destroy_notes` è un **hard-delete** senza cestino: chiedi conferma esplicita.
 
-Le note richiedono lo stesso piano del connettore MCP (Pro); un errore di piano non è un bug della chiamata.
-
 ### Commenti sui task
 
 **Quando serve:** l'utente vuole lasciare un aggiornamento per gli stakeholder su un
