@@ -176,11 +176,12 @@ Non esistono `update_attachments`/`partial_update_attachments`: un allegato si s
 |------|-----------|-------|
 | `list_notes` | `company_id` | Lista le note di una company; filtra per `project_id` (e `project_id__isnull=true` per le note di company non legate a un progetto) o `title__icontains`. Non cerca nel body — per quello usa `search_notes`. |
 | `retrieve_notes` | `company_id` | Dettaglio di una nota per id. |
-| `create_notes` | `company_id` | Crea una nota (`title`, `content` markdown, `project_id` opzionale, `tags` opzionali per id). |
+| `create_notes` | `company_id` | Crea una nota (`title`, `content` markdown, `project_id` opzionale, `tags` opzionali per id, `source_task` opzionale: id del task da cui la nota è stata promossa, stessa company). |
 | `update_notes` | `company_id` | Sostituzione completa (PUT) di una nota. |
 | `partial_update_notes` | `company_id` | Aggiornamento parziale (PATCH) di una nota. |
 | `destroy_notes` | `company_id` | Elimina una nota (hard-delete). |
 | `search_notes` | — (`company_id` nel body) | Full-text search su `title`+`content` in una company; `project_id` opzionale per restringere a un progetto. Usalo al posto di `list_notes` quando cerchi per contenuto, non per titolo/progetto. |
+| `search_knowledge` | — (`company_id` nel body) | Full-text search unificata su task (`title`+`description`), commenti dei task e note; `project_id` opzionale. Risultati misti ordinati per rilevanza: `kind` (`task`\|`task_comment`\|`note`), `id`, `snippet`, `project_id`/`task_id`. Ticket esclusi. Default per "dove ne abbiamo parlato?". |
 
 ---
 

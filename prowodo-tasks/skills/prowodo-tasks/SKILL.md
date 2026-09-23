@@ -1,6 +1,6 @@
 ---
 name: prowodo-tasks
-description: Use this skill whenever the user mentions tasks, planning, todo, things to do, work to track, backlog, sprint, story points, scrum, grooming, planning poker, checking what needs to be done, or asks to log/create/manage/plan/review tasks. ProWoDo is the single source of truth for all task management and planning. Trigger on any mention of "segna", "crea task", "aggiungi task", "traccia", "todo", "cose da fare", "planning", "pianifica", "backlog", "sprint", "story point", "punti", "stima", "scrum", "grooming", "cosa c'è da fare", "cosa devo fare", "cosa ho da fare", "dimmi i task", "mostrami i task", "check tasks", "what do I need to do", or equivalent in any language. Trigger also on reminder mentions like "reminder", "promemoria", "ricordami", "ricordarmi", "avvisami", "remind me", "set a reminder", "scadenza". Also trigger proactively at the end of a working session to suggest logging completed or upcoming work.
+description: Use this skill whenever the user mentions tasks, planning, todo, things to do, work to track, backlog, sprint, story points, scrum, grooming, planning poker, checking what needs to be done, or asks to log/create/manage/plan/review tasks. ProWoDo is the single source of truth for all task management and planning. Trigger on any mention of "segna", "crea task", "aggiungi task", "traccia", "todo", "cose da fare", "planning", "pianifica", "backlog", "sprint", "story point", "punti", "stima", "scrum", "grooming", "cosa c'è da fare", "cosa devo fare", "cosa ho da fare", "dimmi i task", "mostrami i task", "check tasks", "what do I need to do", or equivalent in any language. Trigger also on reminder mentions like "reminder", "promemoria", "ricordami", "ricordarmi", "avvisami", "remind me", "set a reminder", "scadenza". Trigger also on notes / second brain / knowledge base mentions like "nota", "note", "appunti", "second brain", "knowledge base", "salva questa decisione", "segnati che", "dove ne abbiamo parlato", "cosa sappiamo su", "what do we know about", "save this as a note". Also trigger proactively at the end of a working session to suggest logging completed or upcoming work.
 ---
 
 # ProWoDo — Task Management & Planning
@@ -79,7 +79,7 @@ Usa `list_tasks` per mostrare i task aperti del progetto. Presenta in modo leggi
 2. Se i risultati sembrano pochi, ripeti con `description__icontains=<keyword>` (e/o `title__icontains`) per pescare task dove la keyword compare letteralmente ma con similarity < 0.2 (es. frasi lunghe dove la keyword è una parola tra tante).
 3. Combina sempre con `project_id`, `is_completed=false`, `parent_id` per restringere lo scope.
 
-Non esiste un tool di ricerca separato — tutto passa da `list_tasks` con parametri diversi.
+Per cercare **per contenuto** anche in commenti e note, o quando la domanda è "dove ne abbiamo parlato?", usa `search_knowledge` (vedi "Note e second brain"). `list_tasks` cerca solo nei task.
 
 ### "Aggiungi un task" / "Segna che devo fare X"
 Usa `create_tasks`. Chiedi il progetto se non specificato.
@@ -149,6 +149,32 @@ list_all_reminders(remind_at__date="2026-08-05", is_sent=false)
 
 Usalo per riepiloghi tipo "cosa devo ricordare oggi" invece di iterare `list_tasks` +
 `list_reminders` task per task.
+
+### Note e second brain — salvare e ritrovare conoscenza
+
+Le note sono la knowledge base della company: markdown libero, opzionalmente legato a un progetto. Servono per decisioni, contesto, appunti che non sono azioni da fare (quelli sono task).
+
+**Quale tool per quale domanda:**
+
+| Domanda dell'utente | Tool |
+|---|---|
+| "Dove ne abbiamo parlato?" / "Cosa sappiamo su X?" / "Ho già scritto qualcosa su Y?" | `search_knowledge` — **default per ogni ricerca di conoscenza**: cerca in una chiamata sola su task (titolo+descrizione), commenti dei task e note, ordinato per rilevanza |
+| Cerco solo tra le note, per contenuto | `search_notes` |
+| Elenco le note di un progetto / per titolo | `list_notes` (`project_id`, `title__icontains`) |
+| Salva questa decisione / appunto | `create_notes` |
+| Correggi / aggiungi a una nota | `partial_update_notes` |
+
+**`search_knowledge`:** `company_id` e `query` obbligatori, `project_id` opzionale per restringere. Ogni risultato ha `kind` (`task` | `task_comment` | `note`), `id`, `snippet` (ritagliato, non il testo intero) e — per `task_comment` — il `task_id` del task padre. Per il testo completo chiama poi `retrieve_notes` / `retrieve_tasks` / `list_taskcomments`. Restituisce `{"results": [...]}`, max una pagina di risultati: se serve, affina la query o passa `project_id`. **Ticket e commenti ticket non sono inclusi.** La ricerca è full-text (parole intere), non fuzzy: con zero risultati riprova con un sinonimo o una parola più corta prima di concludere che non c'è nulla.
+
+**Promuovere un task a nota:** non c'è un tool dedicato. Leggi il task (`retrieve_tasks`, più `list_taskcomments` se la discussione conta), poi `create_notes` con `source_task` = id del task: la nota resta collegata alla sua origine (`SET_NULL` se il task viene eliminato). `source_task` è scrivibile anche su `update_notes` / `partial_update_notes` e deve appartenere alla stessa company della nota. Non chiudere né modificare il task d'origine, a meno che l'utente lo chieda.
+
+**Scrivere una nota:**
+- `title` breve e cercabile (l'utente lo cercherà per parole chiave); `content` in markdown.
+- Metti `project_id` se il contenuto riguarda un progetto, omettilo per note di company.
+- Prima di creare, se il tema può esistere già, fai una `search_notes` e proponi di aggiornare la nota esistente invece di duplicarla.
+- `destroy_notes` è un **hard-delete** senza cestino: chiedi conferma esplicita.
+
+Le note richiedono lo stesso piano del connettore MCP (Pro); un errore di piano non è un bug della chiamata.
 
 ### Commenti sui task
 
@@ -425,6 +451,8 @@ Quando l'utente chiede "cosa hai fatto?" o "aggiorna i task", aggiorna i task Pr
 | Riordina root | `reorder_root_tasks` |
 | Aggiungi tag | `add_tag_tasks` |
 | Sotto-task (indent) | `increase_depth_tasks` / `decrease_depth_tasks` |
+| Cerca conoscenza (task+commenti+note) | `search_knowledge` |
+| Note (CRUD + ricerca) | `list_notes` / `retrieve_notes` / `create_notes` / `partial_update_notes` / `destroy_notes` / `search_notes` |
 | Lista utenti company | `list_users` (path: `company_id`, supporta `search`) |
 | Dettaglio utente | `retrieve_users` |
 | Utente corrente ("io") | `retrieve_current_user` (nessun parametro) |
