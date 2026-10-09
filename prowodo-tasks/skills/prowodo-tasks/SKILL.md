@@ -172,6 +172,8 @@ Le note sono la knowledge base della company: markdown libero, opzionalmente leg
 - `title` breve e cercabile (l'utente lo cercherà per parole chiave); `content` in markdown.
 - Metti `project_id` se il contenuto riguarda un progetto, omettilo per note di company.
 - Prima di creare, se il tema può esistere già, fai una `search_notes` e proponi di aggiornare la nota esistente invece di duplicarla.
+- **Visibilità.** Ogni nota è `company` (default, la vedono tutti i membri della company) oppure `private` (la vede solo chi l'ha scritta, nessuna eccezione nemmeno per gli admin). Crea con `visibility: "private"` **solo** se l'utente lo chiede ("nota mia", "privata", "solo per me", "appunto personale"); in tutti gli altri casi lascia il default. `visibility` lo cambia solo l'autore: non rendere privata una nota di altri né pubblica una privata senza richiesta esplicita.
+- Le ricerche (`search_notes`, `search_knowledge`, `list_notes`) restituiscono solo le note che l'utente può vedere: una nota privata altrui non compare mai, quindi "non l'ho trovata" non prova che non esista. `list_notes` accetta `visibility=private` per ritrovare solo i propri appunti privati.
 - `destroy_notes` è un **hard-delete** senza cestino: chiedi conferma esplicita.
 
 ### Commenti sui task
