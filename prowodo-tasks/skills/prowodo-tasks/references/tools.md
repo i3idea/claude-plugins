@@ -179,7 +179,12 @@ Non esistono `update_attachments`/`partial_update_attachments`: un allegato si s
 | `create_notes` | `company_id` | Crea una nota (`title`, `content` markdown, `project_id` opzionale, `tags` opzionali per id, `source_task` opzionale: id del task da cui la nota è stata promossa, stessa company, `visibility` opzionale: `company` (default) o `private`, visibile solo all'autore). |
 | `update_notes` | `company_id` | Sostituzione completa (PUT) di una nota. |
 | `partial_update_notes` | `company_id` | Aggiornamento parziale (PATCH) di una nota; `visibility` è modificabile solo dall'autore. |
-| `destroy_notes` | `company_id` | Elimina una nota (hard-delete). |
+| `destroy_notes` | `company_id` | Sposta una nota nel cestino (soft-delete, recuperabile con `restore_notes`). Non esiste cancellazione definitiva via MCP. |
+| `trashed_notes` | — (`company_id` nel body) | Note nel cestino che l'utente può vedere (le sue private + le condivise), le più recenti prima, max 100; `project_id` opzionale. |
+| `restore_notes` | `company_id` | Riporta una nota dal cestino alle note attive (le private solo il loro autore). |
+| `history_notes` | `company_id` | Ultime 50 versioni di una nota (`history_id`, data, titolo, contenuto), la più recente prima. |
+| `revert_notes` | `company_id` | Ripristina titolo e contenuto di una versione (`history_id` nel body); il revert è una nuova versione. |
+| `links_notes` | `company_id` | Link in uscita (`[[wikilink]]`, con `resolved`) e backlink di una nota; solo note visibili all'utente. |
 | `search_notes` | — (`company_id` nel body) | Full-text search su `title`+`content` in una company; `project_id` opzionale per restringere a un progetto. Usalo al posto di `list_notes` quando cerchi per contenuto, non per titolo/progetto. Non restituisce le note private altrui. |
 | `search_knowledge` | — (`company_id` nel body) | Full-text search unificata su task (`title`+`description`), commenti dei task e note; `project_id` opzionale. Risultati misti ordinati per rilevanza: `kind` (`task`\|`task_comment`\|`note`), `id`, `snippet`, `project_id`/`task_id`. Ticket esclusi. Default per "dove ne abbiamo parlato?". |
 
