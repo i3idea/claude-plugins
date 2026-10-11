@@ -174,7 +174,9 @@ Le note sono la knowledge base della company: markdown libero, opzionalmente leg
 - Prima di creare, se il tema può esistere già, fai una `search_notes` e proponi di aggiornare la nota esistente invece di duplicarla.
 - **Visibilità.** Ogni nota è `company` (default, la vedono tutti i membri della company) oppure `private` (la vede solo chi l'ha scritta, nessuna eccezione nemmeno per gli admin). Crea con `visibility: "private"` **solo** se l'utente lo chiede ("nota mia", "privata", "solo per me", "appunto personale"); in tutti gli altri casi lascia il default. `visibility` lo cambia solo l'autore: non rendere privata una nota di altri né pubblica una privata senza richiesta esplicita.
 - Le ricerche (`search_notes`, `search_knowledge`, `list_notes`) restituiscono solo le note che l'utente può vedere: una nota privata altrui non compare mai, quindi "non l'ho trovata" non prova che non esista. `list_notes` accetta `visibility=private` per ritrovare solo i propri appunti privati.
-- `destroy_notes` è un **hard-delete** senza cestino: chiedi conferma esplicita.
+- **Cestino.** `destroy_notes` **non cancella per sempre**: sposta la nota nel cestino (si vede e si recupera con `trashed_notes` / `restore_notes`). La cancellazione definitiva non esiste via MCP: la fa l'utente dall'app (tab Trash). Conferma comunque prima di cestinare più di una nota, e di' all'utente dove ritrovarla.
+- **Cronologia.** `history_notes` elenca le ultime 50 versioni (con `history_id`, data, titolo e contenuto); `revert_notes` ripristina titolo e contenuto di una versione (tag, progetto e visibilità non cambiano) e salva il revert come nuova versione, quindi si può annullare. Usali per "torna alla versione di ieri" o dopo una modifica sbagliata, invece di riscrivere la nota a mano.
+- **Collegamenti.** Nel `content` si può scrivere `[[Titolo nota]]` oppure `[[id|etichetta]]`: crea un link verso un'altra nota della stessa company. Un titolo con zero o più corrispondenze resta "non risolto": usa la forma con l'id. Una nota condivisa non può linkare una privata. `links_notes` restituisce i link in uscita (`resolved` vero/falso) e i **backlink** (chi punta a questa nota): seguili per ricostruire il contesto prima di rispondere a "cosa sappiamo su X?". I `[[...]]` dentro blocchi di codice sono ignorati.
 
 ### Commenti sui task
 
@@ -452,7 +454,8 @@ Quando l'utente chiede "cosa hai fatto?" o "aggiorna i task", aggiorna i task Pr
 | Aggiungi tag | `add_tag_tasks` |
 | Sotto-task (indent) | `increase_depth_tasks` / `decrease_depth_tasks` |
 | Cerca conoscenza (task+commenti+note) | `search_knowledge` |
-| Note (CRUD + ricerca) | `list_notes` / `retrieve_notes` / `create_notes` / `partial_update_notes` / `destroy_notes` / `search_notes` |
+| Note (CRUD + ricerca) | `list_notes` / `retrieve_notes` / `create_notes` / `partial_update_notes` / `destroy_notes` (cestino) / `search_notes` |
+| Cestino, versioni, link delle note | `trashed_notes` / `restore_notes` / `history_notes` / `revert_notes` / `links_notes` |
 | Lista utenti company | `list_users` (path: `company_id`, supporta `search`) |
 | Dettaglio utente | `retrieve_users` |
 | Utente corrente ("io") | `retrieve_current_user` (nessun parametro) |
@@ -569,11 +572,11 @@ Per spostare un task in un altro progetto (anche di un'altra company) chiama `mo
 
 ## Documentazione di riferimento
 
-Questo file copre i flussi ad alta frequenza. Il backend espone **92 tool MCP** in
+Questo file copre i flussi ad alta frequenza. Il backend espone **97 tool MCP** in
 totale — le famiglie rimanenti sono in due file separati per non caricarle in ogni
 sessione quando non servono:
 
-- **`references/tools.md`** — tabella completa di tutti i 92 tool, raggruppati per
+- **`references/tools.md`** — tabella completa di tutti i 97 tool, raggruppati per
   famiglia, con path param richiesti e una frase di scopo per ciascuno. Apri questo
   file quando ti serve l'elenco completo o il nome esatto di un tool che non ricordi.
 - **`references/collaboration.md`** — le famiglie a bassa frequenza con "quando serve"
