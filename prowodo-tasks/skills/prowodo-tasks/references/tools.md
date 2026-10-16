@@ -185,8 +185,8 @@ Non esistono `update_attachments`/`partial_update_attachments`: un allegato si s
 | `history_notes` | `company_id` | Ultime 50 versioni di una nota (`history_id`, data, titolo, contenuto), la più recente prima. |
 | `revert_notes` | `company_id` | Ripristina titolo e contenuto di una versione (`history_id` nel body); il revert è una nuova versione. |
 | `links_notes` | `company_id` | Link in uscita (`[[wikilink]]`, con `resolved`) e backlink di una nota; solo note visibili all'utente. |
-| `search_notes` | — (`company_id` nel body) | Full-text search su `title`+`content` in una company; `project_id` opzionale per restringere a un progetto. Usalo al posto di `list_notes` quando cerchi per contenuto, non per titolo/progetto. Non restituisce le note private altrui. |
-| `search_knowledge` | — (`company_id` nel body) | Full-text search unificata su task (`title`+`description`), commenti dei task e note; `project_id` opzionale. Risultati misti ordinati per rilevanza: `kind` (`task`\|`task_comment`\|`note`), `id`, `snippet`, `project_id`/`task_id`. Ticket esclusi. Default per "dove ne abbiamo parlato?". |
+| `search_notes` | — (`company_id` nel body) | Full-text search su `title`+`content` in una company; `project_id` opzionale per restringere a un progetto. Usalo al posto di `list_notes` quando cerchi per contenuto, non per titolo/progetto. Non restituisce le note private altrui. Cerca parole intere, non significati: con pochi risultati riprova con sinonimi e traduzioni. |
+| `search_knowledge` | — (`company_id` nel body) | Full-text search unificata su task (`title`+`description`), commenti dei task e note; `project_id` opzionale. Risultati misti ordinati per rilevanza: `kind` (`task`\|`task_comment`\|`note`), `id`, `snippet`, `project_id`/`task_id`. Ticket esclusi. Default per "dove ne abbiamo parlato?". Parole intere, non semantica: con pochi risultati riprova con sinonimi e traduzioni. |
 
 ---
 
