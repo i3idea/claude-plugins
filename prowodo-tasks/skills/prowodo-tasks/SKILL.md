@@ -178,6 +178,12 @@ Le note sono la knowledge base della company: markdown libero, opzionalmente leg
 - **Cestino.** `destroy_notes` **non cancella per sempre**: sposta la nota nel cestino (si vede e si recupera con `trashed_notes` / `restore_notes`). La cancellazione definitiva non esiste via MCP: la fa l'utente dall'app (tab Trash). Conferma comunque prima di cestinare più di una nota, e di' all'utente dove ritrovarla.
 - **Cronologia.** `history_notes` elenca le ultime 50 versioni (con `history_id`, data, titolo e contenuto); `revert_notes` ripristina titolo e contenuto di una versione (tag, progetto e visibilità non cambiano) e salva il revert come nuova versione, quindi si può annullare. Usali per "torna alla versione di ieri" o dopo una modifica sbagliata, invece di riscrivere la nota a mano.
 - **Collegamenti.** Nel `content` si può scrivere `[[Titolo nota]]` oppure `[[id|etichetta]]`: crea un link verso un'altra nota della stessa company. Un titolo con zero o più corrispondenze resta "non risolto": usa la forma con l'id. Una nota condivisa non può linkare una privata. `links_notes` restituisce i link in uscita (`resolved` vero/falso) e i **backlink** (chi punta a questa nota): seguili per ricostruire il contesto prima di rispondere a "cosa sappiamo su X?". I `[[...]]` dentro blocchi di codice sono ignorati.
+- **Revisione delle note** ("rivedi le mie note", o l'utente risponde al promemoria mensile "Review my ProWoDo notes"). Procedi per passi e **chiedi conferma prima di scrivere o cancellare**: cestino e cronologia rendono tutto reversibile, ma decide l'utente.
+  1. **Inbox**: `list_notes` con `tags__text=inbox` (per company). Per ogni nota proponi progetto, tag e titolo migliori, oppure unione o cestino; dopo lo smistamento togli il tag `inbox`.
+  2. **Note vecchie**: `list_notes` con `updated_at__lte=<data di 6 mesi fa>` e `ordering=updated_at` (le più vecchie per prime). Proponi di aggiornare, mandare nel cestino (`destroy_notes`) o lasciare.
+  3. **Doppioni**: confronta i titoli e, per i candidati, usa `search_notes` sul titolo; proponi di unire.
+  4. **Wikilink orfani**: `links_notes` sulle note più importanti; per ogni link con `resolved: false` proponi di creare la nota mancante o di correggere il titolo.
+  5. Riepiloga cosa hai cambiato e cosa hai lasciato, con i link (`app_url`). Le note private altrui non compaiono mai: "non ho trovato doppioni" vale solo per ciò che l'utente può vedere.
 
 ### Commenti sui task
 
