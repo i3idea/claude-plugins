@@ -174,7 +174,7 @@ Non esistono `update_attachments`/`partial_update_attachments`: un allegato si s
 
 | Tool | Path param | Scopo |
 |------|-----------|-------|
-| `list_notes` | `company_id` | Lista le note di una company; filtra per `project_id` (e `project_id__isnull=true` per le note di company non legate a un progetto) o `title__icontains`, oppure `visibility` (`company`/`private`). Restituisce solo le note visibili all'utente. Non cerca nel body — per quello usa `search_notes`. |
+| `list_notes` | `company_id` | Lista le note di una company; filtra per `project_id` (e `project_id__isnull=true` per le note di company non legate a un progetto) o `title__icontains`, oppure `visibility` (`company`/`private`). Filtri di revisione: `updated_at__lt|lte|gt|gte`, `created_at__lt|lte|gt|gte` (datetime ISO), `tags__text` (es. `inbox`, case-insensitive), `ordering` (`updated_at`, `created_at`, `title`, prefisso `-` per l'inverso; default più recenti per prime). Restituisce solo le note visibili all'utente. Non cerca nel body — per quello usa `search_notes`. |
 | `retrieve_notes` | `company_id` | Dettaglio di una nota per id. |
 | `create_notes` | `company_id` | Crea una nota (`title`, `content` markdown, `project_id` opzionale, `tags` opzionali per id, `source_task` opzionale: id del task da cui la nota è stata promossa, stessa company, `visibility` opzionale: `company` (default) o `private`, visibile solo all'autore). |
 | `update_notes` | `company_id` | Sostituzione completa (PUT) di una nota. |
