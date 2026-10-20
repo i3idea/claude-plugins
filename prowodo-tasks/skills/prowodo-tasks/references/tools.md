@@ -1,5 +1,7 @@
 # Elenco completo dei tool MCP ProWoDo
 
+← [Indice della skill](../SKILL.md) · Vedi anche: [famiglie a bassa frequenza](collaboration.md)
+
 Tabella generata dal backend (`grep -oP '^\s{4}"\K[a-z_]+(?=":)' pwd-backend/src/prowodo/core/api/mcp_descriptions.py | sort`) più `assign_user_tasks` / `unassign_user_tasks`, che portano la descrizione inline via `@mcp_tool(description=...)` invece che in `mcp_descriptions.py` e quindi non compaiono in quel grep — **92 tool** in totale. Vedi `SKILL.md` per i nomi nudi vs il prefisso reale del tool (`mcp__plugin_prowodo-tasks_prowodo__...` o equivalente) e per il flusso base.
 
 "Path param" elenca solo i parametri **oltre** all'id della risorsa stessa (che per retrieve/update/partial_update/destroy va comunque passato, tipicamente come `pk`). "—" = nessun path param oltre eventualmente `pk`.
@@ -190,4 +192,4 @@ Non esistono `update_attachments`/`partial_update_attachments`: un allegato si s
 
 ---
 
-Per i flussi ad alta frequenza (commenti, allegati, dipendenze, sprint, `list_all_reminders`) con esempi di chiamata, vedi `SKILL.md`. Per ticket/resume entry/tag-CRUD/progetti-CRUD/lanes con esempi, vedi `references/collaboration.md`.
+Per i flussi ad alta frequenza (commenti, allegati, dipendenze, sprint, `list_all_reminders`) con esempi di chiamata, vedi l'indice in [SKILL.md](../SKILL.md). Per ticket/resume entry/tag-CRUD/progetti-CRUD/lanes con esempi, vedi `references/collaboration.md`.

@@ -1,9 +1,11 @@
 # Famiglie a bassa frequenza
 
+← [Indice della skill](../SKILL.md) · Vedi anche: [tool completi](tools.md) · [sprint](sprints.md) · [commenti](comments.md)
+
 Queste famiglie di tool si usano meno spesso del flusso base task/sprint — per questo
 sono qui e non in `SKILL.md`: non serve caricarle in ogni sessione. Per l'elenco
-completo di tutti i tool con path param e scopo, vedi `references/tools.md`. Per i
-nomi nudi vs il prefisso reale del tool MCP, vedi `SKILL.md`.
+completo di tutti i tool con path param e scopo, vedi [tools.md](tools.md). Per i
+nomi nudi vs il prefisso reale del tool MCP, vedi [SKILL.md](../SKILL.md).
 
 ## Ticket
 
@@ -26,7 +28,7 @@ famiglia copre solo l'intake e i commenti specifici del ticket.
   pubblica espone dettagli non destinati al cliente.
 - `destroy_ticketcomments` — soft-delete (nasconde) un commento, non cancellazione fisica.
 
-**I due link, da non confondere** (vedi anche "Link alla piattaforma" in `SKILL.md`):
+**I due link, da non confondere** (vedi anche "Link alla piattaforma" in [SKILL.md](../SKILL.md#link-alla-piattaforma)):
 `app_url` su ticket submission/commenti è INTERNO (drawer del task nel team); `public_url`
 su `retrieve_ticketsubmissions` è PUBBLICO, la pagina che vede chi ha aperto il ticket.
 Non dare mai `app_url` al cliente.
@@ -102,7 +104,7 @@ interno. Usali quando l'utente vuole **creare un nuovo progetto**, rinominarlo, 
 archiviarlo — flusso raro rispetto al lavoro quotidiano sui task, ma diretto: niente
 soft-delete a metà, `destroy_projects` archivia (`is_archivied=true`), non cancella.
 
-Vedi anche in `SKILL.md` la sezione sul campo `is_archivied` (sic) — vale anche per i
+Vedi anche in [gotchas.md](gotchas.md) la sezione sul campo `is_archivied` (sic) — vale anche per i
 progetti creati/modificati con questi tool: verifica sempre `is_archivied: false` prima
 di proporli come destinazione.
 
