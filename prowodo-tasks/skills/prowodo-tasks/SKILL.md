@@ -66,6 +66,7 @@ dedicato: aprilo **solo** quando l'utente tocca quell'argomento.
 | Cercare task per testo ("ci sono task su Y?") · assegnare a qualcuno · "cosa devo fare io" | [references/search-and-assign.md](references/search-and-assign.md) |
 | Un promemoria / "ricordami" · "che reminder ho oggi?" | [references/reminders.md](references/reminders.md) |
 | Salvare o ritrovare conoscenza (note, "dove ne abbiamo parlato?", revisione note) | [references/notes.md](references/notes.md) |
+| La giornata di oggi in un solo ordine · il ritmo settimanale (focus per giorno, obiettivi, scadenze) · "sposta a domani" · "segna: …" | skill **oggi** · tool in [references/rhythm.md](references/rhythm.md) |
 | Commentare un task o leggerne il thread | [references/comments.md](references/comments.md) |
 | Allegare file/testo/link a progetto, company o task | [references/attachments.md](references/attachments.md) |
 | Vincoli "X non parte finché Y non finisce" | [references/dependencies.md](references/dependencies.md) |
@@ -74,7 +75,7 @@ dedicato: aprilo **solo** quando l'utente tocca quell'argomento.
 | Default di company/progetto per la cwd | [references/project-defaults.md](references/project-defaults.md) |
 | Errori strani dell'API, progetti archiviati, spostare un task di progetto | [references/gotchas.md](references/gotchas.md) |
 | Ticket, resume entry, tag, CRUD progetti, lanes | [references/collaboration.md](references/collaboration.md) |
-| Nome esatto di un tool (elenco completo dei 97) | [references/tools.md](references/tools.md) |
+| Nome esatto di un tool (elenco completo dei 105) | [references/tools.md](references/tools.md) |
 
 ## Scenari rapidi
 
@@ -140,6 +141,7 @@ Quando l'utente chiede "cosa hai fatto?" o "aggiorna i task", aggiorna i task Pr
 | Crea reminder | `create_reminders` (path: `task_id` + body) |
 | Aggiorna reminder | `partial_update_reminders` |
 | Elimina reminder | `destroy_reminders` |
+| Ritmo e giornata | `retrieve_current_rhythm` / `today_rhythm` / `set_text_rhythm` / `mark_interpreted_rhythm` / `list_rhythm_items` / `create_rhythm_items` / `partial_update_rhythm_items` / `destroy_rhythm_items` (vedi [references/rhythm.md](references/rhythm.md)) |
 
 ## Parametri minimi per creare un task
 
@@ -156,9 +158,9 @@ parent_id: <id>            # opzionale, per sotto-task
 
 Questo file copre il flusso base; i dettagli sono divisi per argomento (vedi
 "Indice degli scenari" sopra) per non caricarli in ogni sessione. Il backend espone
-**97 tool MCP** in totale:
+**105 tool MCP** in totale:
 
-- **[references/tools.md](references/tools.md)** — tabella completa di tutti i 97 tool,
+- **[references/tools.md](references/tools.md)** — tabella completa di tutti i 105 tool,
   raggruppati per famiglia, con path param richiesti e una frase di scopo per ciascuno.
   Aprilo quando ti serve il nome esatto di un tool che non ricordi.
 - **[references/collaboration.md](references/collaboration.md)** — le famiglie a bassa
