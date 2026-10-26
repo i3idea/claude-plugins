@@ -193,3 +193,7 @@ Non esistono `update_attachments`/`partial_update_attachments`: un allegato si s
 ---
 
 Per i flussi ad alta frequenza (commenti, allegati, dipendenze, sprint, `list_all_reminders`) con esempi di chiamata, vedi l'indice in [SKILL.md](../SKILL.md). Per ticket/resume entry/tag-CRUD/progetti-CRUD/lanes con esempi, vedi `references/collaboration.md`.
+
+## Ritmo (giornata e focus settimanale)
+
+Otto tool, vedi [rhythm.md](rhythm.md): `retrieve_current_rhythm`, `today_rhythm`, `set_text_rhythm`, `mark_interpreted_rhythm`, `list_rhythm_items`, `create_rhythm_items`, `partial_update_rhythm_items`, `destroy_rhythm_items`. Non sono inclusi nel conteggio dell'intestazione sopra.

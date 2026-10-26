@@ -10,6 +10,10 @@ mentions in any language and routes work through the ProWoDo MCP server.
   points (IT / EN / mixed)
 - Loads a workflow guide that tells Claude how to use the ProWoDo MCP tools
   idiomatically
+- **Today & weekly rhythm** (skill `oggi`): one ordered list of what to do today
+  across all your companies, driven by a per-user rhythm you can edit in ProWoDo
+  (focus per weekday, goals for the week, deadlines); plus "move this to tomorrow",
+  "raise its priority" and "segna: …" capture
 - Manages project defaults per working directory (company / project / Scrum mode)
   so you don't have to repeat them every session
 - Encodes verified API gotchas (4096-char description cap, order renormalize
