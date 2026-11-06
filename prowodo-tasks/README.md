@@ -14,6 +14,8 @@ mentions in any language and routes work through the ProWoDo MCP server.
   across all your companies, driven by a per-user rhythm you can edit in ProWoDo
   (focus per weekday, goals for the week, deadlines); plus "move this to tomorrow",
   "raise its priority" and "segna: …" capture
+- **`help` and `list_release_notes`**: a generated guide to the tools by area, and
+  ProWoDo's recent release notes (public feed), for connector users without the skill
 - Manages project defaults per working directory (company / project / Scrum mode)
   so you don't have to repeat them every session
 - Encodes verified API gotchas (4096-char description cap, order renormalize

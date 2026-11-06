@@ -197,3 +197,7 @@ Per i flussi ad alta frequenza (commenti, allegati, dipendenze, sprint, `list_al
 ## Ritmo (giornata e focus settimanale)
 
 Otto tool, vedi [rhythm.md](rhythm.md): `retrieve_current_rhythm`, `today_rhythm`, `set_text_rhythm`, `mark_interpreted_rhythm`, `list_rhythm_items`, `create_rhythm_items`, `partial_update_rhythm_items`, `destroy_rhythm_items`. Non sono inclusi nel conteggio dell'intestazione sopra.
+
+## Guida e novità
+
+Due tool, vedi [help-and-releases.md](help-and-releases.md): `help`, `list_release_notes`. Non sono inclusi nel conteggio dell'intestazione sopra.
