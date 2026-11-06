@@ -36,3 +36,24 @@ Le note sono la knowledge base della company: markdown libero, opzionalmente leg
   3. **Doppioni**: confronta i titoli e, per i candidati, usa `search_notes` sul titolo; proponi di unire.
   4. **Wikilink orfani**: `links_notes` sulle note più importanti; per ogni link con `resolved: false` proponi di creare la nota mancante o di correggere il titolo.
   5. Riepiloga cosa hai cambiato e cosa hai lasciato, con i link (`app_url`). Le note private altrui non compaiono mai: "non ho trovato doppioni" vale solo per ciò che l'utente può vedere.
+
+## Coltivare il second brain: cattura proattiva e pulizia periodica
+
+← [Indice della skill](../SKILL.md) · Vedi anche: [reminder](reminders.md)
+
+**Cattura proattiva.** Se durante il lavoro emerge qualcosa di duraturo e riusabile — una decisione **con il suo perché**, un gotcha scoperto a proprie spese, una procedura verificata, un fatto non ovvio su un progetto — **proponi in una riga di salvarlo come nota** («Vuoi che lo salvi come nota?»). Poi:
+- **Mai salvare senza un sì esplicito.** La proposta è un'offerta, non un'azione.
+- **Prima cerca** (`search_knowledge`, con le varianti di "Ricerca che non trova"): se esiste una nota sul tema, proponi di aggiornare quella invece di crearne una nuova.
+- **Una nota, un concetto**: titolo breve e cercabile, `[[Titolo]]` verso le note collegate, `project_id` se riguarda un progetto. Se nasce da un task, `source_task`.
+- **Non proporre** ciò che è già nel codice o nella git history, stato che cambia in fretta, ovvietà, o cose già proposte e rifiutate nella stessa sessione.
+- Visibilità `private` solo se l'utente lo chiede (vedi sopra).
+
+Il plugin porta questo promemoria in contesto a ogni avvio di sessione con un hook `SessionStart` (`hooks/session-start.sh`). L'hook funziona solo in Claude Code: su claude.ai vale questa regola della skill, senza il richiamo automatico.
+
+**Pulizia periodica.** Esiste già un promemoria lato server: il **1° di ogni mese alle 09:00** ProWoDo manda un messaggio fisso («Ask your AI assistant: "Review my ProWoDo notes."», con il numero di note in `inbox`). I canali (push, email, Telegram) sono **opt-in e spenti di default**: se l'utente dice di non riceverlo, il primo posto da guardare sono le impostazioni di notifica del profilo. Alla risposta si segue la procedura "Revisione delle note" qui sopra.
+
+**Una skill non può schedulare da sola.** Può solo suggerirlo, e lo fa soltanto se l'utente mostra interesse per una revisione più frequente del mese («rivedile ogni settimana»). In quel caso:
+- proponi una **routine cloud** (skill `schedule`) o, per un controllo dentro la sessione, `/loop`;
+- la routine deve **solo preparare proposte** — per esempio elencare inbox, note non toccate da 6 mesi, doppioni e wikilink orfani — **mai** cestinare o riscrivere: decide l'utente;
+- crea la schedulazione **solo dopo conferma**: è un'azione che persiste fuori dalla sessione;
+- ricorda che la routine ha bisogno dell'accesso all'MCP di ProWoDo; se l'ambiente lo perde, fallisce in silenzio.
