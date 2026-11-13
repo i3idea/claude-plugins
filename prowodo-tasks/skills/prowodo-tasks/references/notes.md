@@ -48,7 +48,7 @@ Le note sono la knowledge base della company: markdown libero, opzionalmente leg
 - **Non proporre** ciò che è già nel codice o nella git history, stato che cambia in fretta, ovvietà, o cose già proposte e rifiutate nella stessa sessione.
 - Visibilità `private` solo se l'utente lo chiede (vedi sopra).
 
-Il plugin porta questo promemoria in contesto a ogni avvio di sessione con un hook `SessionStart` (`hooks/session-start.sh`). L'hook funziona solo in Claude Code: su claude.ai vale questa regola della skill, senza il richiamo automatico.
+Il plugin porta questo promemoria in contesto a ogni avvio di sessione con un hook `SessionStart` (`hooks/session-start.sh`). Un hook `PreCompact` (`hooks/pre-compact.sh`) chiede al riassunto di compaction di tenere una sezione «Unsaved note candidates»: non può far salvare nulla prima della compaction (il suo output va solo al riassunto), quindi è `SessionStart` con matcher `compact` a far proporre quelle note appena la sessione riprende. Se trovi quella sezione nel riassunto, proponi il salvataggio come sopra. L'hook funziona solo in Claude Code: su claude.ai vale questa regola della skill, senza il richiamo automatico.
 
 **Pulizia periodica.** Esiste già un promemoria lato server: il **1° di ogni mese alle 09:00** ProWoDo manda un messaggio fisso («Ask your AI assistant: "Review my ProWoDo notes."», con il numero di note in `inbox`). I canali (push, email, Telegram) sono **opt-in e spenti di default**: se l'utente dice di non riceverlo, il primo posto da guardare sono le impostazioni di notifica del profilo. Alla risposta si segue la procedura "Revisione delle note" qui sopra.
 
