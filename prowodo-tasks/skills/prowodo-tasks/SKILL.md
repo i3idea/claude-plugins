@@ -5,177 +5,177 @@ description: Use whenever the user mentions tasks, planning, todo, backlog, spri
 
 # ProWoDo — Task Management & Planning
 
-ProWoDo è il sistema centrale per task, planning e backlog. Usalo **sempre** per:
-- Creare task da fare
-- Vedere cosa c'è in backlog
-- Pianificare il lavoro (sprint, priorità, ordine)
-- Segnare task completati o in corso
-- Organizzare il lavoro per progetto
-- Tracciare avanzamento (progress %)
+ProWoDo is the central system for tasks, planning and backlog. **Always** use it to:
+- Create tasks to do
+- See what is in the backlog
+- Plan the work (sprints, priorities, order)
+- Mark tasks as completed or in progress
+- Organize work by project
+- Track progress (progress %)
 
-## I tool MCP: nomi e prefisso
+## The MCP tools: names and prefix
 
-Questa skill cita i tool con il **nome nudo** (`list_tasks`, `create_tasks`, ...). Il
-prefisso reale **dipende da come il server ProWoDo è connesso** e non è sotto il
-controllo della skill:
+This skill refers to tools by their **bare name** (`list_tasks`, `create_tasks`, ...). The
+real prefix **depends on how the ProWoDo server is connected** and is not under the
+skill's control:
 
-| Come è connesso | Nome reale del tool |
-|-----------------|---------------------|
-| MCP incluso nel plugin (default) | `mcp__plugin_prowodo-tasks_prowodo__list_tasks` |
-| `claude mcp add ... prowodo` (manuale) | `mcp__prowodo__list_tasks` |
-| Connector claude.ai | `mcp__claude_ai_Prowodo__list_tasks` |
+| How it is connected | Real tool name |
+|---------------------|----------------|
+| MCP bundled in the plugin (default) | `mcp__plugin_prowodo-tasks_prowodo__list_tasks` |
+| `claude mcp add ... prowodo` (manual) | `mcp__prowodo__list_tasks` |
+| claude.ai connector | `mcp__claude_ai_Prowodo__list_tasks` |
 
-**Non assumere un prefisso: guarda i tool effettivamente disponibili in sessione e
-usa quello che finisce col nome giusto.** Se una stessa installazione ha più di una
-di queste connessioni attive, vedrai **due set equivalenti** di tool — usane uno solo
-e resta coerente per tutta la sessione.
+**Do not assume a prefix: look at the tools actually available in the session and use
+the one that ends with the right name.** If the same installation has more than one of
+these connections active, you will see **two equivalent sets** of tools — use only one
+and stay consistent for the whole session.
 
-Se non trovi **nessun** tool ProWoDo, il server non è autenticato: di' all'utente di
-lanciare `/mcp` e completare il login OAuth nel browser. Non ripiegare su `curl`.
+If you find **no** ProWoDo tool at all, the server is not authenticated: tell the user to
+run `/mcp` and complete the OAuth login in the browser. Do not fall back to `curl`.
 
-## Flusso base
+## Base flow
 
-1. **Controlla la memoria di progetto** (`prowodo_defaults.md` nella memory dir corrente — vedi [references/project-defaults.md](references/project-defaults.md)). Se esiste, usa company/project/scrum come default.
-2. Altrimenti **lista le company** con `list_companies` e **i progetti** con `list_projects` (passa `company_id`). **Controlla il campo `is_archivied`** (sic, typo backend) su ogni progetto: non proporre progetti archiviati come destinazione e non scriverci task. Se l'unico match è archiviato, segnalalo all'utente e chiedi un'alternativa.
-3. Quando hai capito company + project + se l'utente usa scrum, **proponi di salvarlo in memoria** (vedi [references/project-defaults.md](references/project-defaults.md)) per evitare di richiederlo ogni volta.
-4. Agisci in base all'intenzione dell'utente (vedi l'"Indice degli scenari" sotto).
+1. **Check the project memory** (`prowodo_defaults.md` in the current memory dir — see [references/project-defaults.md](references/project-defaults.md)). If it exists, use company/project/scrum as defaults.
+2. Otherwise **list the companies** with `list_companies` and **the projects** with `list_projects` (pass `company_id`). **Check the `is_archivied` field** (sic, backend typo) on every project: do not suggest archived projects as a destination and do not write tasks into them. If the only match is archived, tell the user and ask for an alternative.
+3. Once you have worked out company + project + whether the user uses scrum, **offer to save it in memory** (see [references/project-defaults.md](references/project-defaults.md)) to avoid asking every time.
+4. Act according to the user's intent (see the "Scenario index" below).
 
-**Operazioni di sola lettura** (list, retrieve): eseguile direttamente senza chiedere conferma.
-**Operazioni di scrittura singola** (crea/aggiorna/sposta 1 task): eseguile direttamente senza chiedere conferma.
-**Operazioni massive** (modifica/crea/elimina 5+ task in una volta): chiedi conferma prima.
+**Read-only operations** (list, retrieve): run them directly without asking for confirmation.
+**Single write operations** (create/update/move 1 task): run them directly without asking for confirmation.
+**Bulk operations** (edit/create/delete 5+ tasks at once): ask for confirmation first.
 
-## Link alla piattaforma
+## Platform links
 
-Quando riporti un task, un progetto, uno sprint, un commento, un reminder, un allegato o una dipendenza, **includi sempre `app_url`** come link cliccabile — è un campo read-only esposto dal serializer proprio per questo.
+When you report a task, a project, a sprint, a comment, a reminder, an attachment or a dependency, **always include `app_url`** as a clickable link — it is a read-only field exposed by the serializer for exactly this purpose.
 
-**Non costruire mai a mano la URL di un task (o di un progetto/sprint/...).** Il campo esiste apposta perché il payload da solo non basta a comporla correttamente: usa sempre `app_url` così com'è.
+**Never build the URL of a task (or project/sprint/...) by hand.** The field exists precisely because the payload alone is not enough to compose it correctly: always use `app_url` as it is.
 
-Cose da sapere sui link:
-- Un task apre il drawer del task. Commenti, reminder, allegati task e dipendenze **non hanno una pagina propria** — il loro `app_url` punta al drawer del task padre (per una dipendenza, al **successore**, cioè il task bloccato). Il frontend apre il drawer solo via `?taskId=`: **non esistono tab indirizzabili**, quindi non puoi linkare direttamente al tab dei commenti.
-- Un progetto ha `app_url` che punta a `/{company}/{project}/dashboard`. Le altre viste condividono la stessa base `/{company}/{project}/`: `tasks/list`, `board`, `backlog`, `matrix`, `tasks/timeline`, `sprints`, `attachments`, `scoring`. Quando usarle: prioritizzazione → `matrix`, pianificazione temporale → `tasks/timeline`, sprint in corso → `board`, ricerca/albero → `tasks/list`. Task e sprint portano anche `company_id`, quindi puoi comporre tu stesso queste URL di vista quando serve.
-- **La timeline è gated sul piano** (`featureGuard('gantt')`): a chi non ha Gantt nel piano quel link apre la pagina di billing con un toast di upgrade. Non proporla come default — solo se l'utente chiede esplicitamente la vista timeline/Gantt.
-- Una ticket submission porta **due** link distinti: `app_url` (INTERNO, per il team) e `public_url` (`/t/{uuid}`, PUBBLICO — la pagina che vede chi ha aperto il ticket). **Non confonderli**: dare l'`app_url` interno a un cliente è esattamente l'errore che questa distinzione serve a evitare. `public_url` va condiviso con chi ha aperto il ticket, `app_url` resta interno al team.
+Things to know about links:
+- A task opens the task drawer. Comments, reminders, task attachments and dependencies **have no page of their own** — their `app_url` points to the parent task's drawer (for a dependency, to the **successor**, i.e. the blocked task). The frontend opens the drawer only via `?taskId=`: **there are no addressable tabs**, so you cannot link directly to the comments tab.
+- A project has an `app_url` pointing to `/{company}/{project}/dashboard`. The other views share the same base `/{company}/{project}/`: `tasks/list`, `board`, `backlog`, `matrix`, `tasks/timeline`, `sprints`, `attachments`, `scoring`. When to use them: prioritization → `matrix`, time planning → `tasks/timeline`, current sprint → `board`, search/tree → `tasks/list`. Tasks and sprints also carry `company_id`, so you can compose these view URLs yourself when needed.
+- **The timeline is plan-gated** (`featureGuard('gantt')`): for users without Gantt in their plan that link opens the billing page with an upgrade toast. Do not suggest it as a default — only if the user explicitly asks for the timeline/Gantt view.
+- A ticket submission carries **two** distinct links: `app_url` (INTERNAL, for the team) and `public_url` (`/t/{uuid}`, PUBLIC — the page seen by whoever opened the ticket). **Do not confuse them**: giving the internal `app_url` to a customer is exactly the mistake this distinction exists to avoid. `public_url` is to be shared with whoever opened the ticket, `app_url` stays internal to the team.
 
-## Indice degli scenari
+## Scenario index
 
-Il flusso base e le regole sono qui sotto. Il dettaglio di ogni scenario sta in un file
-dedicato: aprilo **solo** quando l'utente tocca quell'argomento.
+The base flow and the rules are below. The detail of each scenario lives in a dedicated
+file: open it **only** when the user touches that topic.
 
-| Se l'utente vuole… | Apri |
-|--------------------|------|
-| Cercare task per testo ("ci sono task su Y?") · assegnare a qualcuno · "cosa devo fare io" | [references/search-and-assign.md](references/search-and-assign.md) |
-| Un promemoria / "ricordami" · "che reminder ho oggi?" | [references/reminders.md](references/reminders.md) |
-| Salvare o ritrovare conoscenza (note, "dove ne abbiamo parlato?", revisione note) | [references/notes.md](references/notes.md) |
-| La giornata di oggi in un solo ordine · il ritmo settimanale (focus per giorno, obiettivi, scadenze) · "sposta a domani" · "segna: …" | skill **oggi** · tool in [references/rhythm.md](references/rhythm.md) |
-| "Cosa c'è di nuovo in ProWoDo?" · "cosa sai fare?" · non sai quale tool usare | [references/help-and-releases.md](references/help-and-releases.md) |
-| Commentare un task o leggerne il thread | [references/comments.md](references/comments.md) |
-| Allegare file/testo/link a progetto, company o task | [references/attachments.md](references/attachments.md) |
-| Vincoli "X non parte finché Y non finisce" | [references/dependencies.md](references/dependencies.md) |
-| Riordinare · stimare (story points) · prioritizzare (ICE/RICE) | [references/ordering-and-estimation.md](references/ordering-and-estimation.md) |
-| Sprint, Scrum, chiusura sprint | [references/sprints.md](references/sprints.md) |
-| Default di company/progetto per la cwd | [references/project-defaults.md](references/project-defaults.md) |
-| Errori strani dell'API, progetti archiviati, spostare un task di progetto | [references/gotchas.md](references/gotchas.md) |
-| Ticket, resume entry, tag, CRUD progetti, lanes | [references/collaboration.md](references/collaboration.md) |
-| Nome esatto di un tool (elenco completo dei 108) | [references/tools.md](references/tools.md) |
+| If the user wants to… | Open |
+|-----------------------|------|
+| Search tasks by text ("are there tasks about Y?" / "ci sono task su Y?") · assign to someone · "what do I have to do" / "cosa devo fare io" | [references/search-and-assign.md](references/search-and-assign.md) |
+| A reminder / "ricordami" (remind me) · "what reminders do I have today?" / "che reminder ho oggi?" | [references/reminders.md](references/reminders.md) |
+| Save or retrieve knowledge (notes, "where did we talk about it?" / "dove ne abbiamo parlato?", notes review) | [references/notes.md](references/notes.md) |
+| Today's day in a single order · the weekly rhythm (focus per day, goals, deadlines) · "move to tomorrow" / "sposta a domani" · "segna: …" (note: …) | skill **oggi** · tools in [references/rhythm.md](references/rhythm.md) |
+| "What's new in ProWoDo?" / "cosa c'è di nuovo in ProWoDo?" · "what can you do?" / "cosa sai fare?" · you don't know which tool to use | [references/help-and-releases.md](references/help-and-releases.md) |
+| Comment on a task or read its thread | [references/comments.md](references/comments.md) |
+| Attach files/text/links to a project, company or task | [references/attachments.md](references/attachments.md) |
+| Constraints "X does not start until Y is finished" | [references/dependencies.md](references/dependencies.md) |
+| Reorder · estimate (story points) · prioritize (ICE/RICE) | [references/ordering-and-estimation.md](references/ordering-and-estimation.md) |
+| Sprints, Scrum, closing a sprint | [references/sprints.md](references/sprints.md) |
+| Company/project defaults for the cwd | [references/project-defaults.md](references/project-defaults.md) |
+| Odd API errors, archived projects, moving a task to another project | [references/gotchas.md](references/gotchas.md) |
+| Tickets, resume entries, tags, project CRUD, lanes | [references/collaboration.md](references/collaboration.md) |
+| Exact name of a tool (full list of the 108) | [references/tools.md](references/tools.md) |
 
-## Scenari rapidi
+## Quick scenarios
 
-### "Cosa c'è da fare?" / Backlog / Planning
-Usa `list_tasks` per mostrare i task aperti del progetto. Presenta in modo leggibile: nome, priorità, progress %, assegnatario se presente.
+### "What is there to do?" / Backlog / Planning ("Cosa c'è da fare?")
+Use `list_tasks` to show the project's open tasks. Present them readably: name, priority, progress %, assignee if present.
 
-### "Aggiungi un task" / "Segna che devo fare X"
-Usa `create_tasks`. Chiedi il progetto se non specificato.
+### "Add a task" / "Note that I have to do X" ("Aggiungi un task" / "Segna che devo fare X")
+Use `create_tasks`. Ask for the project if not specified.
 
-### Stati del task (`status`)
+### Task states (`status`)
 
-Il campo `status` ha **quattro valori**: `BACKLOG`, `TODO`, `IN_PROGRESS`, `DONE`. Usalo per riflettere dove si trova il task nel flusso di lavoro, non solo per marcarlo finito — es. quando l'utente dice "ci sto lavorando" o "inizio X", porta il task a `IN_PROGRESS` con `partial_update_tasks(status: "IN_PROGRESS")` (vedi anche la nota su IN_PROGRESS e assegnatari in [references/search-and-assign.md](references/search-and-assign.md)).
+The `status` field has **four values**: `BACKLOG`, `TODO`, `IN_PROGRESS`, `DONE`. Use it to reflect where the task is in the workflow, not just to mark it finished — e.g. when the user says "I'm working on it" or "I'm starting X" ("ci sto lavorando" / "inizio X"), move the task to `IN_PROGRESS` with `partial_update_tasks(status: "IN_PROGRESS")` (see also the note on IN_PROGRESS and assignees in [references/search-and-assign.md](references/search-and-assign.md)).
 
-### "Ho finito X" / "Segna come completato"
-Usa `partial_update_tasks` con questi campi insieme: `is_completed: true, progress: 100, status: "DONE"`. Il backend tratta i tre "segnali done" come invariante (vedi `Task.save()` in `core.models`) — settandone uno solo, gli altri vengono comunque sincronizzati, ma esplicitare tutti e tre rende l'intent chiaro e indipendente da future modifiche al backend.
+### "I finished X" / "Mark as completed" ("Ho finito X" / "Segna come completato")
+Use `partial_update_tasks` with these fields together: `is_completed: true, progress: 100, status: "DONE"`. The backend treats the three "done signals" as an invariant (see `Task.save()` in `core.models`) — if you set just one, the others get synced anyway, but spelling out all three makes the intent clear and independent of future backend changes.
 
-**Aggiornare anche la description con un riassunto di cosa è stato fatto** è una buona pratica quando il task è non-banale: aiuta a riprendere il contesto in futuro. Limite hard: la description ha **max 4096 caratteri** (HTTP 400 oltre, con field-level error message). Se serve narrare molto, splitta in un commento sul task o linka allo spec/plan in `docs/superpowers/`.
+**Also updating the description with a summary of what was done** is good practice when the task is non-trivial: it helps recover the context in the future. Hard limit: the description has a **max of 4096 characters** (HTTP 400 beyond that, with a field-level error message). If you need to narrate a lot, split it into a comment on the task or link to the spec/plan in `docs/superpowers/`.
 
-### Aggiornare l'avanzamento / "Sono al 50% su X"
-Usa `partial_update_tasks` con il campo `progress` (0–100).
-Mostra sempre il progress % nei riepiloghi quando è > 0.
+### Updating progress / "I'm at 50% on X" ("Sono al 50% su X")
+Use `partial_update_tasks` with the `progress` field (0–100).
+Always show the progress % in summaries when it is > 0.
 
-### "Pianifichiamo il prossimo sprint" / Prioritizzazione
-Lista i task aperti, poi aiuta l'utente a ordinarli per priorità o a spostarli con i tool di riordino.
-Se per il progetto è attivo il workflow Scrum (vedi [references/sprints.md](references/sprints.md)), proponi anche di assegnare i task a uno sprint con `move_to_sprint_tasks` e di stimarli con `story_points` (vedi [references/ordering-and-estimation.md](references/ordering-and-estimation.md)).
+### "Let's plan the next sprint" / Prioritization ("Pianifichiamo il prossimo sprint")
+List the open tasks, then help the user order them by priority or move them with the reordering tools.
+If the Scrum workflow is active for the project (see [references/sprints.md](references/sprints.md)), also suggest assigning the tasks to a sprint with `move_to_sprint_tasks` and estimating them with `story_points` (see [references/ordering-and-estimation.md](references/ordering-and-estimation.md)).
 
-### Fine sessione di lavoro
-Se hai completato del lavoro significativo, proponi di registrare i task completati o creare task per il follow-up in ProWoDo.
+### End of a work session
+If you have completed significant work, suggest recording the completed tasks or creating follow-up tasks in ProWoDo.
 
-## Task interni creati da superpowers (TaskCreate)
+## Internal tasks created by superpowers (TaskCreate)
 
-Claude Code usa il tool `TaskCreate` / `TaskUpdate` per tracciare il proprio lavoro interno durante l'esecuzione di skill (es. superpowers, feature-dev). Questi task interni **non vanno su ProWoDo** — esistono solo nella sessione corrente.
+Claude Code uses the `TaskCreate` / `TaskUpdate` tool to track its own internal work while running skills (e.g. superpowers, feature-dev). These internal tasks **do not go on ProWoDo** — they exist only in the current session.
 
-**Usa ProWoDo** per task del progetto utente (feature, bug, backlog).
-**Usa TaskCreate** per step interni di una sessione di lavoro (es. checklist di una skill).
+**Use ProWoDo** for the user's project tasks (features, bugs, backlog).
+**Use TaskCreate** for internal steps of a work session (e.g. a skill's checklist).
 
-Quando l'utente chiede "cosa hai fatto?" o "aggiorna i task", aggiorna i task ProWoDo rilevanti con progress e stato, non i task interni.
+When the user asks "what did you do?" or "update the tasks" ("cosa hai fatto?" / "aggiorna i task"), update the relevant ProWoDo tasks with progress and status, not the internal tasks.
 
-## Tool disponibili
+## Available tools
 
-| Azione | Tool |
+| Action | Tool |
 |--------|------|
-| Lista company | `list_companies` |
-| Lista progetti | `list_projects` |
-| Lista task | `list_tasks` |
-| Dettaglio task | `retrieve_tasks` |
-| Crea task | `create_tasks` |
-| Aggiorna task | `partial_update_tasks` |
-| Sposta su/giù | `move_up_tasks` / `move_down_tasks` |
-| Sposta in progetto | `move_to_project_tasks` |
-| Riordina root | `reorder_root_tasks` |
-| Aggiungi tag | `add_tag_tasks` |
-| Sotto-task (indent) | `increase_depth_tasks` / `decrease_depth_tasks` |
-| Cerca conoscenza (task+commenti+note) | `search_knowledge` |
-| Note (CRUD + ricerca) | `list_notes` / `retrieve_notes` / `create_notes` / `partial_update_notes` / `destroy_notes` (cestino) / `search_notes` |
-| Cestino, versioni, link delle note | `trashed_notes` / `restore_notes` / `history_notes` / `revert_notes` / `links_notes` |
-| Lista utenti company | `list_users` (path: `company_id`, supporta `search`) |
-| Dettaglio utente | `retrieve_users` |
-| Utente corrente ("io") | `retrieve_current_user` (nessun parametro) |
-| Assegna utente a task | `assign_user_tasks` (`pk` + `body.user_id`, idempotente) |
-| Rimuovi utente da task | `unassign_user_tasks` (`pk` + `body.user_id`, noop-safe) |
-| Lista reminder di un task | `list_reminders` (path: `task_id`) |
-| Crea reminder | `create_reminders` (path: `task_id` + body) |
-| Aggiorna reminder | `partial_update_reminders` |
-| Elimina reminder | `destroy_reminders` |
-| Ritmo e giornata | `retrieve_current_rhythm` / `today_rhythm` / `set_text_rhythm` / `mark_interpreted_rhythm` / `list_rhythm_items` / `create_rhythm_items` / `partial_update_rhythm_items` / `destroy_rhythm_items` (vedi [references/rhythm.md](references/rhythm.md)) |
-| Guida ai tool · novità del prodotto | `help` / `list_release_notes` (vedi [references/help-and-releases.md](references/help-and-releases.md)) |
+| List companies | `list_companies` |
+| List projects | `list_projects` |
+| List tasks | `list_tasks` |
+| Task detail | `retrieve_tasks` |
+| Create task | `create_tasks` |
+| Update task | `partial_update_tasks` |
+| Move up/down | `move_up_tasks` / `move_down_tasks` |
+| Move to project | `move_to_project_tasks` |
+| Reorder root | `reorder_root_tasks` |
+| Add tag | `add_tag_tasks` |
+| Sub-task (indent) | `increase_depth_tasks` / `decrease_depth_tasks` |
+| Search knowledge (tasks+comments+notes) | `search_knowledge` |
+| Notes (CRUD + search) | `list_notes` / `retrieve_notes` / `create_notes` / `partial_update_notes` / `destroy_notes` (trash) / `search_notes` |
+| Notes trash, versions, links | `trashed_notes` / `restore_notes` / `history_notes` / `revert_notes` / `links_notes` |
+| List company users | `list_users` (path: `company_id`, supports `search`) |
+| User detail | `retrieve_users` |
+| Current user ("me") | `retrieve_current_user` (no parameters) |
+| Assign user to task | `assign_user_tasks` (`pk` + `body.user_id`, idempotent) |
+| Remove user from task | `unassign_user_tasks` (`pk` + `body.user_id`, noop-safe) |
+| List a task's reminders | `list_reminders` (path: `task_id`) |
+| Create reminder | `create_reminders` (path: `task_id` + body) |
+| Update reminder | `partial_update_reminders` |
+| Delete reminder | `destroy_reminders` |
+| Rhythm and day | `retrieve_current_rhythm` / `today_rhythm` / `set_text_rhythm` / `mark_interpreted_rhythm` / `list_rhythm_items` / `create_rhythm_items` / `partial_update_rhythm_items` / `destroy_rhythm_items` (see [references/rhythm.md](references/rhythm.md)) |
+| Tool guide · product news | `help` / `list_release_notes` (see [references/help-and-releases.md](references/help-and-releases.md)) |
 
-## Parametri minimi per creare un task
+## Minimum parameters to create a task
 
 ```
-title: "titolo del task"   # obbligatorio
-project_id: <id>           # obbligatorio (default dalla memoria di progetto se presente)
-description: "..."         # opzionale
-progress: 0–100            # opzionale, default 0
-story_points: 1|2|3|5|8|13 # opzionale, consigliato (vedi references/ordering-and-estimation.md)
-parent_id: <id>            # opzionale, per sotto-task
+title: "task title"   # required
+project_id: <id>           # required (default from project memory if present)
+description: "..."         # optional
+progress: 0–100            # optional, default 0
+story_points: 1|2|3|5|8|13 # optional, recommended (see references/ordering-and-estimation.md)
+parent_id: <id>            # optional, for sub-tasks
 ```
 
-## Documentazione di riferimento
+## Reference documentation
 
-Questo file copre il flusso base; i dettagli sono divisi per argomento (vedi
-"Indice degli scenari" sopra) per non caricarli in ogni sessione. Il backend espone
-**108 tool MCP** in totale:
+This file covers the base flow; the details are split by topic (see the
+"Scenario index" above) so they are not loaded in every session. The backend exposes
+**108 MCP tools** in total:
 
-- **[references/tools.md](references/tools.md)** — tabella completa di tutti i 108 tool,
-  raggruppati per famiglia, con path param richiesti e una frase di scopo per ciascuno.
-  Aprilo quando ti serve il nome esatto di un tool che non ricordi.
-- **[references/collaboration.md](references/collaboration.md)** — le famiglie a bassa
-  frequenza con "quando serve" ed esempio: ticket (`retrieve_ticketsubmissions`,
-  `*_ticketcomments`, flag `is_internal`), resume entry (piano/fatto giornaliero), CRUD
-  tag oltre `add_tag_tasks`/`remove_tag_tasks`, CRUD progetti, lanes della board sprint.
-  Aprilo solo quando l'utente chiede esplicitamente una di queste cose.
+- **[references/tools.md](references/tools.md)** — complete table of all 108 tools,
+  grouped by family, with required path params and a one-sentence purpose for each.
+  Open it when you need the exact name of a tool you do not remember.
+- **[references/collaboration.md](references/collaboration.md)** — the low-frequency
+  families with "when needed" and an example: tickets (`retrieve_ticketsubmissions`,
+  `*_ticketcomments`, `is_internal` flag), resume entries (daily plan/done), tag CRUD
+  beyond `add_tag_tasks`/`remove_tag_tasks`, project CRUD, sprint board lanes.
+  Open it only when the user explicitly asks for one of these things.
 
-## Regole
+## Rules
 
-- **Lettura e scrittura singola**: esegui senza chiedere conferma
-- **Operazioni massive (5+)**: chiedi conferma con riepilogo di cosa verrà fatto
-- Se l'utente non specifica il progetto, mostra i progetti disponibili e chiedi
-- Dopo ogni operazione mostra un riepilogo conciso (nome task, ID, stato, progress %)
-- Preferisci aggiornare task esistenti piuttosto che crearne di nuovi duplicati
-- Quando mostri task con progress > 0, visualizza sempre la percentuale
+- **Single read and write**: run without asking for confirmation
+- **Bulk operations (5+)**: ask for confirmation with a summary of what will be done
+- If the user does not specify the project, show the available projects and ask
+- After every operation show a concise summary (task name, ID, status, progress %)
+- Prefer updating existing tasks over creating new duplicates
+- When showing tasks with progress > 0, always display the percentage

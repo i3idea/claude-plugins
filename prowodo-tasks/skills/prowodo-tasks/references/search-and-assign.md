@@ -1,48 +1,48 @@
-# Cercare task e assegnarli
+# Searching tasks and assigning them
 
-← [Indice della skill](../SKILL.md) · Vedi anche: [note](notes.md) · [ordinamento e stime](ordering-and-estimation.md)
+← [Skill index](../SKILL.md) · See also: [notes](notes.md) · [ordering and estimation](ordering-and-estimation.md)
 
-Ricerca testuale sui task (`search` vs `*__icontains`) e assegnazione a utenti.
+Text search on tasks (`search` vs `*__icontains`) and assignment to users.
 
-## "Cerca task su X" / "Ci sono task che riguardano Y?"
-`list_tasks` espone **tre filtri testuali distinti** — usano index diversi, non sono intercambiabili:
+## "Search tasks about X" / "Are there tasks about Y?" ("Cerca task su X" / "Ci sono task che riguardano Y?")
+`list_tasks` exposes **three distinct text filters** — they use different indexes, they are not interchangeable:
 
-| Parametro | Tipo di match | Index |
-|-----------|---------------|-------|
-| `search` | **fuzzy trigram similarity** su titolo + descrizione, soglia 0.2, ordinato per similarity desc | GIN su trigrammi (`pg_trgm`) |
-| `title__icontains` | substring case-insensitive solo nel titolo | b-tree / varchar_pattern_ops (o sequential scan) |
-| `description__icontains` | substring case-insensitive solo nella descrizione | stesso tipo |
+| Parameter | Match type | Index |
+|-----------|------------|-------|
+| `search` | **fuzzy trigram similarity** on title + description, threshold 0.2, sorted by similarity desc | GIN on trigrams (`pg_trgm`) |
+| `title__icontains` | case-insensitive substring in the title only | b-tree / varchar_pattern_ops (or sequential scan) |
+| `description__icontains` | case-insensitive substring in the description only | same type |
 
-**Implicazioni pratiche:**
-- `search` tollera **typo, parole abbreviate, ordine diverso** (es. "clodbuild" trova "cloudbuild"), ma **scarta** i match con similarity < 0.2 → keyword troppo corte o diverse dal testo vengono filtrate.
-- `title__icontains` / `description__icontains` sono **letterali**: la stringa deve comparire tale e quale (case-insensitive). Non gestiscono typo ma non filtrano per threshold.
+**Practical implications:**
+- `search` tolerates **typos, abbreviated words, different order** (e.g. "clodbuild" finds "cloudbuild"), but **discards** matches with similarity < 0.2 → keywords that are too short or different from the text get filtered out.
+- `title__icontains` / `description__icontains` are **literal**: the string must appear exactly as is (case-insensitive). They do not handle typos but do not filter by threshold.
 
-**Strategia consigliata** per una ricerca completa:
-1. Parti da `search=<keyword>` → cattura la maggior parte (inclusi typo) con i più rilevanti in cima.
-2. Se i risultati sembrano pochi, ripeti con `description__icontains=<keyword>` (e/o `title__icontains`) per pescare task dove la keyword compare letteralmente ma con similarity < 0.2 (es. frasi lunghe dove la keyword è una parola tra tante).
-3. Combina sempre con `project_id`, `is_completed=false`, `parent_id` per restringere lo scope.
+**Recommended strategy** for a complete search:
+1. Start from `search=<keyword>` → it catches most of them (including typos) with the most relevant on top.
+2. If the results seem few, repeat with `description__icontains=<keyword>` (and/or `title__icontains`) to catch tasks where the keyword appears literally but with similarity < 0.2 (e.g. long sentences where the keyword is one word among many).
+3. Always combine with `project_id`, `is_completed=false`, `parent_id` to narrow the scope.
 
-Per cercare **per contenuto** anche in commenti e note, o quando la domanda è "dove ne abbiamo parlato?", usa `search_knowledge` (vedi [notes.md](notes.md)). `list_tasks` cerca solo nei task.
+To search **by content** also in comments and notes, or when the question is "where did we talk about it?" ("dove ne abbiamo parlato?"), use `search_knowledge` (see [notes.md](notes.md)). `list_tasks` only searches in tasks.
 
-## "Assegna X a Y" / "Chi è assegnato a Z?"
+## "Assign X to Y" / "Who is assigned to Z?" ("Assegna X a Y" / "Chi è assegnato a Z?")
 
-**Disponibile dal backend `8489763` (2026-05-26) / `@prowodo/angular-client@1.2.0`.**
+**Available since backend `8489763` (2026-05-26) / `@prowodo/angular-client@1.2.0`.**
 
-**Mostra sempre gli assegnatari nei riepiloghi**, leggendo il campo `assignees` del task (`retrieve_tasks(pk=<id>)` o già incluso in `list_tasks`) — una lista di dict con `id`, `display_name`, `username`, `email`, `identity_picture_url`. Non serve una chiamata separata per saperlo.
+**Always show the assignees in summaries**, reading the task's `assignees` field (`retrieve_tasks(pk=<id>)` or already included in `list_tasks`) — a list of dicts with `id`, `display_name`, `username`, `email`, `identity_picture_url`. No separate call is needed to know it.
 
-**"Assegna a me" / "cosa devo fare io":** risolvi "io" con il tool utente corrente `retrieve_current_user` (nessun parametro — ritorna id, username, display name, email dell'utente autenticato). **Non indovinare** il proprio nome con una `list_users` a tentativi: prima che esistesse questo tool era l'unico modo, ora è quello sbagliato.
+**"Assign to me" / "what do I have to do" ("Assegna a me" / "cosa devo fare io"):** resolve "me" with the current-user tool `retrieve_current_user` (no parameters — it returns id, username, display name, email of the authenticated user). **Do not guess** one's own name with trial-and-error `list_users`: before this tool existed it was the only way, now it is the wrong one.
 
-Per assegnare un task a un **altro** utente (non "me"):
+To assign a task to **another** user (not "me"):
 
-1. Risolvi il nome utente in `user_id` con `list_users` (path param: `company_id`). Lo viewset supporta search via `search_fields` su email/username/first_name/last_name/display_name/identity_email — passa la stringa di ricerca come parametro `search` se l'utente cita un nome libero ("Ivan").
-2. Chiama `assign_user_tasks` con `pk=<task_id>` e `body={"user_id": <id>}`. È **idempotente** — chiamarlo due volte non crea duplicati né errore.
-3. Per rimuovere: `unassign_user_tasks` con stesso shape. Ritorna `{"unassigned": true|false}`. **Noop-safe** — chiamarlo su un'assegnazione che non esiste non solleva errore.
+1. Resolve the user name into `user_id` with `list_users` (path param: `company_id`). The viewset supports search via `search_fields` on email/username/first_name/last_name/display_name/identity_email — pass the search string as the `search` parameter if the user cites a free-form name ("Ivan").
+2. Call `assign_user_tasks` with `pk=<task_id>` and `body={"user_id": <id>}`. It is **idempotent** — calling it twice creates neither duplicates nor an error.
+3. To remove: `unassign_user_tasks` with the same shape. It returns `{"unassigned": true|false}`. **Noop-safe** — calling it on an assignment that does not exist raises no error.
 
-**Sicurezza:** il backend rifiuta con 400 se `user_id` punta a un utente NON membro della company del task (cross-tenant). Niente leak.
+**Security:** the backend rejects with 400 if `user_id` points to a user who is NOT a member of the task's company (cross-tenant). No leak.
 
-**Quando un task passa a `IN_PROGRESS` e non ha assegnatari, proponi di assegnarlo** — default: l'utente collegato (via `retrieve_current_user`), salvo diversa indicazione. Uno stato "in corso" senza nessun responsabile è il caso più comune di task che si perde.
+**When a task moves to `IN_PROGRESS` and has no assignees, propose assigning it** — default: the logged-in user (via `retrieve_current_user`), unless otherwise indicated. An "in progress" state with no owner is the most common case of a task getting lost.
 
-Esempio flow tipico — "Assegna il task #1234 a Ivan":
+Typical flow example — "Assign task #1234 to Ivan":
 ```
 1. list_users(company_id=1, search="Ivan")
    → [{id: 42, display_name: "Ivan Bettarini", ...}]
@@ -50,4 +50,4 @@ Esempio flow tipico — "Assegna il task #1234 a Ivan":
    → 201 {id: ..., task_id: 1234, user_id: 42}
 ```
 
-Se la search ritorna più match, mostrali all'utente e chiedi disambiguazione prima di assegnare.
+If the search returns multiple matches, show them to the user and ask for disambiguation before assigning.

@@ -1,43 +1,43 @@
-# Reminder
+# Reminders
 
-← [Indice della skill](../SKILL.md) · Vedi anche: [assegnatari](search-and-assign.md) · [tool completi](tools.md)
+← [Skill index](../SKILL.md) · See also: [assignees](search-and-assign.md) · [full tools](tools.md)
 
-Promemoria temporizzati sui task (push, email, Telegram) e vista trasversale.
+Timed reminders on tasks (push, email, Telegram) and a cross-task view.
 
-## "Ricordami X" / "Metti un reminder" / Reminder sui task
+## "Remind me X" / "Set a reminder" / Reminders on tasks ("Ricordami X" / "Metti un reminder")
 
-**Live in prod dal 2026-07-01.** Ogni task può avere **N reminder** temporizzati, consegnati su più canali (notifica push, email, Telegram). Uno scheduler backend pesca i reminder dovuti ogni minuto, li invia ai destinatari e marca `is_sent`.
+**Live in prod since 2026-07-01.** Every task can have **N reminders** scheduled in time, delivered on multiple channels (push notification, email, Telegram). A backend scheduler picks up the due reminders every minute, sends them to the recipients and marks `is_sent`.
 
-- **Creare**: `create_reminders` con `task_id` (path) + body:
-  - `remind_at` — datetime ISO, **obbligatorio** (quando scatta)
-  - `text` — messaggio del reminder
-  - `recipient_id` — opzionale; se omesso i destinatari sono gli **assegnatari correnti del task**. Deve essere un membro della company del task.
-  - `send_push` / `send_email` / `send_telegram` — canali; **almeno uno true** (default: solo push)
-  - `notify_if_completed` — default false; se true parte anche quando il task è già DONE
-- **Listare**: `list_reminders` con `task_id` (ogni reminder espone `is_sent`).
-- **Aggiornare / eliminare**: `partial_update_reminders` / `destroy_reminders`.
+- **Create**: `create_reminders` with `task_id` (path) + body:
+  - `remind_at` — ISO datetime, **required** (when it fires)
+  - `text` — the reminder's message
+  - `recipient_id` — optional; if omitted the recipients are the task's **current assignees**. Must be a member of the task's company.
+  - `send_push` / `send_email` / `send_telegram` — channels; **at least one true** (default: push only)
+  - `notify_if_completed` — default false; if true it also fires when the task is already DONE
+- **List**: `list_reminders` with `task_id` (each reminder exposes `is_sent`).
+- **Update / delete**: `partial_update_reminders` / `destroy_reminders`.
 
-Esempio — "ricordami di rivedere questo task domani alle 9":
+Example — "remind me to review this task tomorrow at 9" ("ricordami di rivedere questo task domani alle 9"):
 ```
 create_reminders(task_id=1234, body={
   "remind_at": "2026-07-02T09:00:00Z",
-  "text": "Rivedi il task",
+  "text": "Review the task",
   "send_push": true
 })
 ```
 
-Consiglia di impostare i reminder quando l'utente dice "ricordami", "avvisami", "metti un promemoria" o cita una scadenza su un task specifico.
+Recommend setting reminders when the user says "ricordami", "avvisami", "metti un promemoria" (remind me, notify me, set a reminder) or mentions a deadline on a specific task.
 
-## "Che reminder ho oggi?" / "Cosa scatta questa settimana?"
+## "What reminders do I have today?" / "What fires this week?" ("Che reminder ho oggi?" / "Cosa scatta questa settimana?")
 
-`list_reminders` è scoped a **un** task (richiede `task_id`). Per una vista trasversale
-— "i miei reminder di oggi", indipendentemente dal task su cui sono stati messi — usa
-`list_all_reminders`: nessun path param, filtra su tutti i task dell'utente con
-`remind_at__date` / `remind_at__gte` / `remind_at__lte` e `is_sent`.
+`list_reminders` is scoped to **one** task (requires `task_id`). For a cross-task view
+— "my reminders for today", regardless of the task they were put on — use
+`list_all_reminders`: no path param, it filters across all the user's tasks with
+`remind_at__date` / `remind_at__gte` / `remind_at__lte` and `is_sent`.
 
 ```
 list_all_reminders(remind_at__date="2026-08-05", is_sent=false)
 ```
 
-Usalo per riepiloghi tipo "cosa devo ricordare oggi" invece di iterare `list_tasks` +
-`list_reminders` task per task.
+Use it for summaries like "what do I have to remember today" instead of iterating `list_tasks` +
+`list_reminders` task by task.

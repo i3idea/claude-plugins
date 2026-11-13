@@ -1,28 +1,28 @@
-# Commenti sui task
+# Task comments
 
-← [Indice della skill](../SKILL.md) · Vedi anche: [allegati](attachments.md) · [dipendenze](dependencies.md) · [ticket](collaboration.md)
+← [Skill index](../SKILL.md) · See also: [attachments](attachments.md) · [dependencies](dependencies.md) · [tickets](collaboration.md)
 
-Thread di conversazione su un task.
+Conversation thread on a task.
 
-**Quando serve:** l'utente vuole lasciare un aggiornamento per gli stakeholder su un
-task, leggere la discussione già avvenuta, o rispondere a un commento — diverso dalla
-`description` (il "cosa" del task): i commenti sono il thread di conversazione.
+**When needed:** the user wants to leave an update for stakeholders on a
+task, read the discussion that already took place, or reply to a comment — different from the
+`description` (the "what" of the task): comments are the conversation thread.
 
-- `list_taskcomments` / `retrieve_taskcomments` (path: `task_id`) — thread, dal più
-  recente (a differenza dei commenti ticket, che sono dal più vecchio).
-- `create_taskcomments` — **`task_id` va nel body, non nel path** (eccezione rispetto
-  agli altri tool di questa famiglia — se lo passi solo come path param il commento
-  finisce scollegato). L'autore è sempre l'utente autenticato. `comment_id` opzionale
-  per rispondere a un commento esistente.
-- `destroy_taskcomments` (path: `task_id`) — soft-delete: il commento sparisce dal
-  thread ma non è cancellato fisicamente.
+- `list_taskcomments` / `retrieve_taskcomments` (path: `task_id`) — thread, newest
+  first (unlike ticket comments, which are oldest first).
+- `create_taskcomments` — **`task_id` goes in the body, not in the path** (an exception
+  compared to the other tools in this family — if you pass it only as a path param the comment
+  ends up detached). The author is always the authenticated user. `comment_id` optional
+  to reply to an existing comment.
+- `destroy_taskcomments` (path: `task_id`) — soft-delete: the comment disappears from the
+  thread but is not physically deleted.
 
 ```
 create_taskcomments(body={
   "task_id": 1234,
-  "text": "Bloccato in attesa di conferma dal cliente sul copy."
+  "text": "Blocked waiting for confirmation from the customer on the copy."
 })
 ```
 
-`app_url` del commento punta al drawer del task padre (i commenti non hanno una pagina
-propria — vedi "Link alla piattaforma" in [SKILL.md](../SKILL.md#link-alla-piattaforma)).
+The comment's `app_url` points to the parent task's drawer (comments have no page of their
+own — see "Platform links" in [SKILL.md](../SKILL.md#platform-links)).

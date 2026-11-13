@@ -1,68 +1,68 @@
-# Riordinare, stimare, prioritizzare
+# Reordering, estimating, prioritizing
 
-← [Indice della skill](../SKILL.md) · Vedi anche: [sprint](sprints.md) · [gotcha API](gotchas.md) · [defaults di progetto](project-defaults.md)
+← [Skill index](../SKILL.md) · See also: [sprints](sprints.md) · [API gotchas](gotchas.md) · [project defaults](project-defaults.md)
 
-Riordino dei task, story points con decomposizione, prioritizzazione ICE/RICE.
+Task reordering, story points with decomposition, ICE/RICE prioritization.
 
-## "Sposta X prima di Y" / Riordinare
-Per spostamenti singoli usa `move_up_tasks` / `move_down_tasks`. Per spostare un task in posizione precisa o riordinare in massa usa `partial_update_tasks` con il campo `order`.
+## "Move X before Y" / Reordering ("Sposta X prima di Y")
+For single moves use `move_up_tasks` / `move_down_tasks`. To move a task to an exact position or to reorder in bulk use `partial_update_tasks` with the `order` field.
 
-**Comportamento critico del backend (verificato 2026-05-22):** dopo ogni `partial_update_tasks` il backend chiama `Task.reorder()` che **renormalizza tutti gli order del livello** sequenzialmente (0, 1, 2, ...) ordinando per `(order ASC, id ASC)`. Implicazioni:
+**Critical backend behavior (verified 2026-05-22):** after every `partial_update_tasks` the backend calls `Task.reorder()` which **renormalizes all the orders of the level** sequentially (0, 1, 2, ...) sorting by `(order ASC, id ASC)`. Implications:
 
-- Setting `order=200` su un task NON lo mette a posizione 200: lo mette in fondo (o vicino), perché la renormalizzazione lo abbassa al "first free position" dopo i task con order più basso.
-- Setting `order=0` su un task lo porta in cima — gli altri vengono bumpati di 1.
-- Gap grandi (10, 20, 30) NON sono preservati: dopo il primo `partial_update` di un altro task, vengono compattati.
+- Setting `order=200` on a task does NOT put it at position 200: it puts it at the bottom (or close), because the renormalization lowers it to the "first free position" after the tasks with a lower order.
+- Setting `order=0` on a task brings it to the top — the others are bumped by 1.
+- Large gaps (10, 20, 30) are NOT preserved: after the first `partial_update` of another task, they get compacted.
 
-**Pattern raccomandato per riordino massivo** (es. ribilanciare 50+ task per priorità):
-1. Costruisci la lista nell'ordine finale desiderato in memoria.
-2. Itera dall'inizio alla fine: per ogni task in posizione `i`, chiama `partial_update_tasks(order=i)` (interi consecutivi 0,1,2,...).
-3. Eseguili in serie (un batch parallelo va comunque bene, l'ultimo renormalize vince), e accetta che valori esatti possano essere coerciti — quel che conta è l'ordine relativo.
-4. Se due task collidono su uno stesso order, il tiebreak è `id ASC` — se non va bene, fai una seconda passata bumpando il task che vuoi più in alto a `order=i-1` (lo sposta sopra).
+**Recommended pattern for bulk reordering** (e.g. rebalancing 50+ tasks by priority):
+1. Build the list in the desired final order in memory.
+2. Iterate from start to end: for each task at position `i`, call `partial_update_tasks(order=i)` (consecutive integers 0,1,2,...).
+3. Run them serially (a parallel batch is still fine, the last renormalize wins), and accept that exact values may be coerced — what matters is the relative order.
+4. If two tasks collide on the same order, the tiebreak is `id ASC` — if that does not work, do a second pass bumping the task you want higher to `order=i-1` (it moves it above).
 
-Per il task `reorder_root_tasks`: chiama solo `Task.reorder(project_id, parent_id=None)` con solo `project_id` nel body — è un cleanup che compatta gli order, non accetta liste di IDs.
+For the `reorder_root_tasks` task: it only calls `Task.reorder(project_id, parent_id=None)` with just `project_id` in the body — it is a cleanup that compacts the orders, it does not accept lists of IDs.
 
-## Story points e decomposizione
+## Story points and decomposition
 
-Quando crei o aggiorni un task **consiglia** (senza imporlo) la stima in story_points. È utile per:
-- avere un'idea della dimensione del lavoro prima di partire
-- decidere se il task va spezzato in sotto-task più piccoli
-- riempire uno sprint senza overcommit
+When you create or update a task **recommend** (without imposing it) the estimate in story_points. It is useful to:
+- get an idea of the size of the work before starting
+- decide whether the task should be split into smaller sub-tasks
+- fill a sprint without overcommitting
 
-**Scala consigliata** (Fibonacci-like): `1, 2, 3, 5, 8, 13, 21`. Significato indicativo:
-- `1–3` → mezza giornata o meno, pronto da fare
-- `5` → ~1 giorno, scope chiaro
-- `8` → ~2 giorni, ancora gestibile come task singolo
-- `13+` → **troppo grande**, da decomporre
+**Recommended scale** (Fibonacci-like): `1, 2, 3, 5, 8, 13, 21`. Indicative meaning:
+- `1–3` → half a day or less, ready to do
+- `5` → ~1 day, clear scope
+- `8` → ~2 days, still manageable as a single task
+- `13+` → **too big**, to be decomposed
 
-**Cap di decomposizione** (default sensato, override-abile dall'utente):
-- Se un task ha `story_points >= 8` → suggerisci di **spezzarlo in sotto-task** ognuno ≤ 5 punti, usando `create_tasks` con `parent_id` e/o `increase_depth_tasks`.
-- Somma indicativa dei figli ≈ stima del padre (non vincolante, è una sanity check).
-- Per task root rimasti senza stima dopo la conversazione, **non bloccare** l'utente: crea il task lo stesso e segnala "valuta se aggiungere story_points".
+**Decomposition cap** (sensible default, user-overridable):
+- If a task has `story_points >= 8` → suggest **splitting it into sub-tasks** each ≤ 5 points, using `create_tasks` with `parent_id` and/or `increase_depth_tasks`.
+- Indicative sum of the children ≈ the parent's estimate (not binding, it is a sanity check).
+- For root tasks left without an estimate after the conversation, **do not block** the user: create the task anyway and flag "consider adding story_points".
 
-**Quando NON insistere sui punti:**
-- Task amministrativi/operativi rapidi (inviare email, prenotare call): l'overhead di stimarli supera il valore
-- L'utente ha già detto che non usa stime su quel progetto (rispetta il default in memoria, vedi [project-defaults.md](project-defaults.md))
+**When NOT to insist on points:**
+- Quick administrative/operational tasks (sending an email, booking a call): the overhead of estimating them exceeds the value
+- The user has already said they do not use estimates on that project (respect the default in memory, see [project-defaults.md](project-defaults.md))
 
-## Prioritizzazione ICE / RICE
+## ICE / RICE prioritization
 
-Oltre agli story point (dimensione), ProWoDo espone i campi per prioritizzare il backlog con **ICE** e **RICE**. Sono i campi giusti quando l'utente chiede "usa ICE per priorità", "riordina per priorità", "cosa faccio prima", o vuole un ordine oggettivo invece del campo `priority` (spesso lasciato al default MEDIUM e quindi poco discriminante).
+Besides story points (size), ProWoDo exposes the fields to prioritize the backlog with **ICE** and **RICE**. They are the right fields when the user asks "use ICE for priority", "reorder by priority", "what do I do first" ("usa ICE per priorità", "riordina per priorità", "cosa faccio prima"), or wants an objective order instead of the `priority` field (often left at the default MEDIUM and therefore not very discriminating).
 
-**Campi (settabili in `create_tasks` / `partial_update_tasks`):**
+**Fields (settable in `create_tasks` / `partial_update_tasks`):**
 
-| Campo | Range | Significato |
-|-------|-------|-------------|
-| `impact` | 1–5 | Quanto muove l'ago (valore per utente/business) |
-| `confidence` | 0–100 | Quanto sei sicuro dell'impatto / quanto è compreso il lavoro (%) |
-| `effort` | 1–5 | Sforzo/costo. **Più alto = punteggio più basso** |
-| `reach` | 0–N | Solo RICE: quante persone/eventi tocca in un periodo |
+| Field | Range | Meaning |
+|-------|-------|---------|
+| `impact` | 1–5 | How much it moves the needle (value per user/business) |
+| `confidence` | 0–100 | How sure you are of the impact / how well the work is understood (%) |
+| `effort` | 1–5 | Effort/cost. **Higher = lower score** |
+| `reach` | 0–N | RICE only: how many people/events it touches in a period |
 
-**Punteggi calcolati dal backend (read-only nella response):**
-- `ice_score = impact × (confidence / 100) ÷ effort` — verificato (es. `i2 c85 e1` → `1.7`).
-- `rice_score = reach × impact × (confidence / 100) ÷ effort` — formula RICE standard; valorizzato solo se `reach` è settato.
+**Scores computed by the backend (read-only in the response):**
+- `ice_score = impact × (confidence / 100) ÷ effort` — verified (e.g. `i2 c85 e1` → `1.7`).
+- `rice_score = reach × impact × (confidence / 100) ÷ effort` — standard RICE formula; populated only if `reach` is set.
 
-**Come usarli:**
-1. Quando crei/aggiorni task di prodotto **consiglia** di valorizzare `impact` / `confidence` / `effort` (e `reach` se l'utente ragiona per volume → RICE). Per task operativi rapidi non insistere, come per gli story point.
-2. Per prioritizzare: leggi i task con `list_tasks`, ordina per `ice_score` (o `rice_score`) decrescente e proponi quell'ordine. Per **persistere** l'ordine nella board usa `partial_update_tasks(order=i)` **in serie top-down** (0,1,2,...) — vedi "Riordinare" sopra e [gotchas.md](gotchas.md).
-3. `story_points` (dimensione) ed ICE/RICE (priorità) sono ortogonali: un task può essere piccolo ma a bassa priorità e viceversa. Non confonderli.
+**How to use them:**
+1. When you create/update product tasks **recommend** filling in `impact` / `confidence` / `effort` (and `reach` if the user reasons by volume → RICE). For quick operational tasks do not insist, as with story points.
+2. To prioritize: read the tasks with `list_tasks`, sort by `ice_score` (or `rice_score`) descending and propose that order. To **persist** the order on the board use `partial_update_tasks(order=i)` **serially top-down** (0,1,2,...) — see "Reordering" above and [gotchas.md](gotchas.md).
+3. `story_points` (size) and ICE/RICE (priority) are orthogonal: a task can be small but low priority and vice versa. Do not confuse them.
 
-**⚠️ Limite noto dell'ICE — segnalalo sempre prima di riordinare la board alla lettera:** l'ICE premia i task *cheap* (effort basso) e penalizza i *bet strategici* ad alto effort. Un tech-debt da 5 minuti può superare in punteggio il gate di pagamento / il lancio. Quando l'utente vuole riordinare per ICE, **proponi di "pinnare" manualmente in cima i 2-3 bet strategici** (monetizzazione, lancio, blocco critico) e ordinare per ICE tutto il resto, invece di applicare l'ICE puro. RICE mitiga in parte il problema introducendo `reach`, ma non lo elimina.
+**⚠️ Known ICE limitation — always flag it before reordering the board literally:** ICE rewards *cheap* tasks (low effort) and penalizes high-effort *strategic bets*. A 5-minute tech-debt item can outscore the payment gate / the launch. When the user wants to reorder by ICE, **propose to manually "pin" the 2-3 strategic bets at the top** (monetization, launch, critical blocker) and sort everything else by ICE, instead of applying pure ICE. RICE partly mitigates the problem by introducing `reach`, but does not eliminate it.

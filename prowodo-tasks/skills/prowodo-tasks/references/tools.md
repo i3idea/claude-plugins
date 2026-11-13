@@ -1,203 +1,203 @@
-# Elenco completo dei tool MCP ProWoDo
+# Complete list of ProWoDo MCP tools
 
-← [Indice della skill](../SKILL.md) · Vedi anche: [famiglie a bassa frequenza](collaboration.md)
+← [Skill index](../SKILL.md) · See also: [low-frequency families](collaboration.md)
 
-Tabella generata dal backend (`grep -oP '^\s{4}"\K[a-z_]+(?=":)' pwd-backend/src/prowodo/core/api/mcp_descriptions.py | sort`) più `assign_user_tasks` / `unassign_user_tasks`, che portano la descrizione inline via `@mcp_tool(description=...)` invece che in `mcp_descriptions.py` e quindi non compaiono in quel grep — **92 tool** in totale. Vedi `SKILL.md` per i nomi nudi vs il prefisso reale del tool (`mcp__plugin_prowodo-tasks_prowodo__...` o equivalente) e per il flusso base.
+Table generated from the backend (`grep -oP '^\s{4}"\K[a-z_]+(?=":)' pwd-backend/src/prowodo/core/api/mcp_descriptions.py | sort`) plus `assign_user_tasks` / `unassign_user_tasks`, which carry the description inline via `@mcp_tool(description=...)` instead of in `mcp_descriptions.py` and therefore do not appear in that grep — **92 tools** in total. See `SKILL.md` for bare names vs the real tool prefix (`mcp__plugin_prowodo-tasks_prowodo__...` or equivalent) and for the base flow.
 
-"Path param" elenca solo i parametri **oltre** all'id della risorsa stessa (che per retrieve/update/partial_update/destroy va comunque passato, tipicamente come `pk`). "—" = nessun path param oltre eventualmente `pk`.
+"Path param" lists only the parameters **in addition to** the resource's own id (which for retrieve/update/partial_update/destroy must be passed anyway, typically as `pk`). "—" = no path param besides possibly `pk`.
 
 ## Company (workspace)
 
-| Tool | Path param | Scopo |
-|------|-----------|-------|
-| `list_companies` | — | Lista le company (workspace) di cui l'utente è membro. |
-| `retrieve_companies` | — | Dettaglio di una company per id. |
-| `create_companies` | — | Crea una nuova company; l'utente che la crea ne diventa owner. |
+| Tool | Path param | Purpose |
+|------|-----------|---------|
+| `list_companies` | — | Lists the companies (workspaces) the user is a member of. |
+| `retrieve_companies` | — | Detail of a company by id. |
+| `create_companies` | — | Creates a new company; the user who creates it becomes its owner. |
 
-## Membri della company
+## Company members
 
-| Tool | Path param | Scopo |
-|------|-----------|-------|
-| `retrieve_current_user` | — | Profilo dell'utente autenticato (id, username, display name, email) — risolve "io". |
-| `list_users` | `company_id` | Lista i membri di una company; supporta `search` su email/username/nome/display name. |
-| `retrieve_users` | `company_id` | Dettaglio di un membro della company per id. |
+| Tool | Path param | Purpose |
+|------|-----------|---------|
+| `retrieve_current_user` | — | Profile of the authenticated user (id, username, display name, email) — resolves "me". |
+| `list_users` | `company_id` | Lists the members of a company; supports `search` on email/username/name/display name. |
+| `retrieve_users` | `company_id` | Detail of a company member by id. |
 
-## Progetti
+## Projects
 
-| Tool | Path param | Scopo |
-|------|-----------|-------|
-| `list_projects` | `company_id` | Lista i progetti di una company. Esclude gli archiviati salvo `include_archived=true`. Filtra anche per `id`, `title__icontains`, `description__icontains`, più `search`. |
-| `retrieve_projects` | `company_id` | Dettaglio di un progetto per id (inclusi gli archiviati). |
-| `create_projects` | `company_id` | Crea un progetto in una company. |
-| `update_projects` | `company_id` | Sostituzione completa (PUT) di un progetto — tutti i campi scrivibili richiesti. |
-| `partial_update_projects` | `company_id` | Aggiornamento parziale (PATCH) di un progetto. |
-| `destroy_projects` | `company_id` | Archivia (soft) il progetto: `is_archivied=true`, non cancellazione fisica. |
+| Tool | Path param | Purpose |
+|------|-----------|---------|
+| `list_projects` | `company_id` | Lists the projects of a company. Excludes archived ones unless `include_archived=true`. Also filters by `id`, `title__icontains`, `description__icontains`, plus `search`. |
+| `retrieve_projects` | `company_id` | Detail of a project by id (including archived ones). |
+| `create_projects` | `company_id` | Creates a project in a company. |
+| `update_projects` | `company_id` | Full replacement (PUT) of a project — all writable fields required. |
+| `partial_update_projects` | `company_id` | Partial update (PATCH) of a project. |
+| `destroy_projects` | `company_id` | Archives (soft) the project: `is_archivied=true`, not a physical deletion. |
 
-## Task — CRUD
+## Tasks — CRUD
 
-| Tool | Path param | Scopo |
-|------|-----------|-------|
-| `list_tasks` | — | Lista i task accessibili all'utente, con filtri ricchi (`project_id`, `sprint`, `search`, date, `has_ticket`, `assignee_id`, ...). |
-| `retrieve_tasks` | — | Dettaglio di un task per id. |
-| `create_tasks` | — | Crea un task; richiede `project_id`. |
-| `update_tasks` | — | Sostituzione completa (PUT) di un task — richiede anche `title`. |
-| `partial_update_tasks` | — | Aggiornamento parziale (PATCH) di un task (progress, status, story_points, order, ...). |
-| `destroy_tasks` | — | Soft-delete del task; i discendenti non vengono ripromossi automaticamente. |
+| Tool | Path param | Purpose |
+|------|-----------|---------|
+| `list_tasks` | — | Lists the tasks accessible to the user, with rich filters (`project_id`, `sprint`, `search`, dates, `has_ticket`, `assignee_id`, ...). |
+| `retrieve_tasks` | — | Detail of a task by id. |
+| `create_tasks` | — | Creates a task; requires `project_id`. |
+| `update_tasks` | — | Full replacement (PUT) of a task — also requires `title`. |
+| `partial_update_tasks` | — | Partial update (PATCH) of a task (progress, status, story_points, order, ...). |
+| `destroy_tasks` | — | Soft-delete of the task; descendants are not automatically re-promoted. |
 
-## Task — ordinamento e gerarchia
+## Tasks — ordering and hierarchy
 
-| Tool | Path param | Scopo |
-|------|-----------|-------|
-| `move_up_tasks` | — | Sposta il task di una posizione su tra i fratelli. |
-| `move_down_tasks` | — | Sposta il task di una posizione giù tra i fratelli. |
-| `move_relative_to_tasks` | — | Posiziona il task subito `before`/`after` un fratello (`related_task_id`). |
-| `increase_depth_tasks` | — | Indenta il task come figlio di un altro (`new_parent_id`). |
-| `decrease_depth_tasks` | — | Deindenta il task al livello del genitore, opzionalmente dopo `after_task_id`. |
-| `reorder_root_tasks` | — | Compatta gli `order` dei task root di un progetto (`project_id` nel body); manutenzione, non accetta liste. |
-| `reorder_children_tasks` | — | Compatta gli `order` dei figli diretti di un task (id del genitore come `pk`). |
-| `move_to_project_tasks` | — | Sposta il task in un altro progetto/company (`project_id` + `company_id` nel body). |
-| `move_to_sprint_tasks` | — | Sposta uno o più task (e discendenti) in uno sprint o nel backlog (`task_ids` + `sprint_id`, null = backlog). |
+| Tool | Path param | Purpose |
+|------|-----------|---------|
+| `move_up_tasks` | — | Moves the task one position up among its siblings. |
+| `move_down_tasks` | — | Moves the task one position down among its siblings. |
+| `move_relative_to_tasks` | — | Positions the task right `before`/`after` a sibling (`related_task_id`). |
+| `increase_depth_tasks` | — | Indents the task as a child of another (`new_parent_id`). |
+| `decrease_depth_tasks` | — | Outdents the task to the parent's level, optionally after `after_task_id`. |
+| `reorder_root_tasks` | — | Compacts the `order` of a project's root tasks (`project_id` in the body); maintenance, does not accept lists. |
+| `reorder_children_tasks` | — | Compacts the `order` of a task's direct children (parent's id as `pk`). |
+| `move_to_project_tasks` | — | Moves the task to another project/company (`project_id` + `company_id` in the body). |
+| `move_to_sprint_tasks` | — | Moves one or more tasks (and descendants) to a sprint or to the backlog (`task_ids` + `sprint_id`, null = backlog). |
 
-## Assegnazione utenti sul task
+## User assignment on a task
 
-| Tool | Path param | Scopo |
-|------|-----------|-------|
-| `assign_user_tasks` | — | Aggiunge un utente come assegnatario di un task (`pk` + `body.user_id`); idempotente, rifiuta con 400 se l'utente non è membro della company del task. |
-| `unassign_user_tasks` | — | Rimuove un utente dagli assegnatari di un task (`pk` + `body.user_id`); noop-safe, non solleva errore se non era assegnato. |
+| Tool | Path param | Purpose |
+|------|-----------|---------|
+| `assign_user_tasks` | — | Adds a user as an assignee of a task (`pk` + `body.user_id`); idempotent, rejects with 400 if the user is not a member of the task's company. |
+| `unassign_user_tasks` | — | Removes a user from a task's assignees (`pk` + `body.user_id`); noop-safe, raises no error if they were not assigned. |
 
-## Tag
+## Tags
 
-| Tool | Path param | Scopo |
-|------|-----------|-------|
-| `add_tag_tasks` | — | Applica un tag a un task, per `text` (crea il tag se non esiste) o per `id`. |
-| `remove_tag_tasks` | — | Stacca un tag da un task per `id`; no-op se non era attaccato. |
-| `list_tasktags` | `company_id` | Lista i tag definiti in una company. |
-| `retrieve_tasktags` | `company_id` | Dettaglio di un tag per id. |
-| `create_tasktags` | `company_id` | Crea un tag nella company (campo `text`). |
-| `update_tasktags` | `company_id` | Sostituzione completa (PUT) di un tag. |
-| `partial_update_tasktags` | `company_id` | Rinomina o aggiorna parzialmente un tag. |
-| `destroy_tasktags` | `company_id` | Elimina un tag dalla company; i task che lo usavano perdono l'associazione. |
+| Tool | Path param | Purpose |
+|------|-----------|---------|
+| `add_tag_tasks` | — | Applies a tag to a task, by `text` (creates the tag if it does not exist) or by `id`. |
+| `remove_tag_tasks` | — | Detaches a tag from a task by `id`; no-op if it was not attached. |
+| `list_tasktags` | `company_id` | Lists the tags defined in a company. |
+| `retrieve_tasktags` | `company_id` | Detail of a tag by id. |
+| `create_tasktags` | `company_id` | Creates a tag in the company (`text` field). |
+| `update_tasktags` | `company_id` | Full replacement (PUT) of a tag. |
+| `partial_update_tasktags` | `company_id` | Renames or partially updates a tag. |
+| `destroy_tasktags` | `company_id` | Deletes a tag from the company; tasks that used it lose the association. |
 
-## Commenti sui task
+## Task comments
 
-| Tool | Path param | Scopo |
-|------|-----------|-------|
-| `list_taskcomments` | `task_id` | Thread dei commenti di un task. |
-| `retrieve_taskcomments` | `task_id` | Dettaglio di un commento per id. |
-| `create_taskcomments` | — (**`task_id` va nel body**, non nel path — eccezione rispetto agli altri tool di questa famiglia) | Aggiunge un commento; autore = utente autenticato. `comment_id` opzionale per rispondere a un commento esistente. |
-| `destroy_taskcomments` | `task_id` | Soft-delete (nasconde) un commento; non è una cancellazione fisica. |
+| Tool | Path param | Purpose |
+|------|-----------|---------|
+| `list_taskcomments` | `task_id` | Comment thread of a task. |
+| `retrieve_taskcomments` | `task_id` | Detail of a comment by id. |
+| `create_taskcomments` | — (**`task_id` goes in the body**, not in the path — an exception compared to the other tools in this family) | Adds a comment; author = authenticated user. `comment_id` optional to reply to an existing comment. |
+| `destroy_taskcomments` | `task_id` | Soft-delete (hides) a comment; it is not a physical deletion. |
 
-## Allegati (company/progetto)
+## Attachments (company/project)
 
-| Tool | Path param | Scopo |
-|------|-----------|-------|
-| `list_attachments` | `company_id` | Lista cosa è attaccato a una company o a un suo progetto (`project_id` per filtrare, `project_id__isnull=true` per i soli allegati di company). |
-| `retrieve_attachments` | `company_id` | Dettaglio di un allegato: titolo, `kind` (file/link), autore, `url` (signed, scade in 15 minuti per i file). |
-| `create_attachments` | `company_id` | Crea un allegato: esattamente uno tra `text`, `content_base64` (+`content_type`) o `link`; `project_id` opzionale (omesso = allegato di company); contenuto inline max 4MB. |
-| `request_attachment_upload` | body: `company_id`, `project_id?`, `title?` | Primo passo di un upload a due fasi per un Attachment: nessun file nella chiamata, risponde con `upload_url` da usare in una POST multipart separata. |
-| `destroy_attachments` | `company_id` | Soft-delete di un allegato della company. |
+| Tool | Path param | Purpose |
+|------|-----------|---------|
+| `list_attachments` | `company_id` | Lists what is attached to a company or one of its projects (`project_id` to filter, `project_id__isnull=true` for company-only attachments). |
+| `retrieve_attachments` | `company_id` | Detail of an attachment: title, `kind` (file/link), author, `url` (signed, expires in 15 minutes for files). |
+| `create_attachments` | `company_id` | Creates an attachment: exactly one of `text`, `content_base64` (+`content_type`) or `link`; `project_id` optional (omitted = company attachment); inline content max 4MB. |
+| `request_attachment_upload` | body: `company_id`, `project_id?`, `title?` | First step of a two-phase upload for an Attachment: no file in the call, responds with an `upload_url` to be used in a separate multipart POST. |
+| `destroy_attachments` | `company_id` | Soft-delete of a company attachment. |
 
-Non esistono `update_attachments`/`partial_update_attachments`: un allegato si sostituisce (cancella + ricrea), non si modifica.
+`update_attachments`/`partial_update_attachments` do not exist: an attachment is replaced (delete + recreate), not edited.
 
-## Allegati sul task
+## Task attachments
 
-| Tool | Path param | Scopo |
-|------|-----------|-------|
-| `list_taskattachments` | `task_id` | Lista i file allegati a un task (nome, size, url). |
-| `retrieve_taskattachments` | `task_id` | Metadati e url di download di un singolo allegato task. |
-| `request_taskattachment_upload` | body: `task_id` | Primo passo di un upload a due fasi per un TaskAttachment: nessun file nella chiamata, risponde con `upload_url` da usare in una POST multipart separata. |
+| Tool | Path param | Purpose |
+|------|-----------|---------|
+| `list_taskattachments` | `task_id` | Lists the files attached to a task (name, size, url). |
+| `retrieve_taskattachments` | `task_id` | Metadata and download url of a single task attachment. |
+| `request_taskattachment_upload` | body: `task_id` | First step of a two-phase upload for a TaskAttachment: no file in the call, responds with an `upload_url` to be used in a separate multipart POST. |
 
-## Reminder
+## Reminders
 
-| Tool | Path param | Scopo |
-|------|-----------|-------|
-| `list_reminders` | `task_id` | Lista i reminder di un task, ordinati per orario. |
-| `retrieve_reminders` | `task_id` | Dettaglio di un reminder per id. |
-| `create_reminders` | `task_id` | Crea un reminder (`remind_at` obbligatorio, `text`, canali `send_push`/`send_email`/`send_telegram`, `recipient_id` opzionale = assegnatari). |
-| `update_reminders` | `task_id` | Sostituzione completa (PUT) di un reminder. |
-| `partial_update_reminders` | `task_id` | Aggiornamento parziale (PATCH) di un reminder. |
-| `destroy_reminders` | `task_id` | Elimina un reminder dal task. |
-| `list_all_reminders` | — | Reminder di **tutti** i task dell'utente (es. "cosa scatta oggi"), non scoped a un task. Filtra per `remind_at` e `is_sent`. |
+| Tool | Path param | Purpose |
+|------|-----------|---------|
+| `list_reminders` | `task_id` | Lists a task's reminders, ordered by time. |
+| `retrieve_reminders` | `task_id` | Detail of a reminder by id. |
+| `create_reminders` | `task_id` | Creates a reminder (`remind_at` required, `text`, channels `send_push`/`send_email`/`send_telegram`, `recipient_id` optional = assignees). |
+| `update_reminders` | `task_id` | Full replacement (PUT) of a reminder. |
+| `partial_update_reminders` | `task_id` | Partial update (PATCH) of a reminder. |
+| `destroy_reminders` | `task_id` | Deletes a reminder from the task. |
+| `list_all_reminders` | — | Reminders of **all** the user's tasks (e.g. "what fires today"), not scoped to a task. Filters by `remind_at` and `is_sent`. |
 
-## Dipendenze tra task
+## Task dependencies
 
-| Tool | Path param | Scopo |
-|------|-----------|-------|
-| `list_taskdependencies` | `company_id`, `project_id` | Lista le dipendenze di schedulazione di un progetto. Passa `task` per avere solo quelle che toccano un task, da entrambi i versi (chi lo blocca e chi ne dipende); senza, torna il grafo intero. |
-| `retrieve_taskdependencies` | `company_id`, `project_id` | Dettaglio di una dipendenza per id. |
-| `create_taskdependencies` | `company_id`, `project_id` | Collega due task dello stesso progetto (`dependency_type` FS/SS/FF/SF, `lag_days`); rifiutata (400) su self-link, cross-project, antenato/discendente, ciclo. |
-| `update_taskdependencies` | `company_id`, `project_id` | Sostituzione completa (PUT) di una dipendenza — richiede predecessor, successor, dependency_type, lag_days. |
-| `partial_update_taskdependencies` | `company_id`, `project_id` | Cambia `dependency_type` o `lag_days`; ripropaga lo scheduling del successor. |
-| `destroy_taskdependencies` | `company_id`, `project_id` | Rimuove una dipendenza; non riporta indietro le date già spostate in avanti. |
+| Tool | Path param | Purpose |
+|------|-----------|---------|
+| `list_taskdependencies` | `company_id`, `project_id` | Lists the scheduling dependencies of a project. Pass `task` to get only those touching a task, in both directions (what blocks it and what depends on it); without it, the whole graph is returned. |
+| `retrieve_taskdependencies` | `company_id`, `project_id` | Detail of a dependency by id. |
+| `create_taskdependencies` | `company_id`, `project_id` | Links two tasks of the same project (`dependency_type` FS/SS/FF/SF, `lag_days`); rejected (400) on self-link, cross-project, ancestor/descendant, cycle. |
+| `update_taskdependencies` | `company_id`, `project_id` | Full replacement (PUT) of a dependency — requires predecessor, successor, dependency_type, lag_days. |
+| `partial_update_taskdependencies` | `company_id`, `project_id` | Changes `dependency_type` or `lag_days`; re-propagates the successor's scheduling. |
+| `destroy_taskdependencies` | `company_id`, `project_id` | Removes a dependency; does not move back the dates already shifted forward. |
 
-## Sprint
+## Sprints
 
-| Tool | Path param | Scopo |
-|------|-----------|-------|
-| `list_sprints` | — | Lista gli sprint dei progetti delle company dell'utente; filtra per `state` (PLANNED\|ACTIVE\|CLOSED) e per `project_id` (per restringere a un singolo progetto). |
-| `retrieve_sprints` | — | Dettaglio di uno sprint per id. |
-| `create_sprints` | — | Crea uno sprint (`project_id` nel body); nasce in stato PLANNED. |
-| `update_sprints` | — | Sostituzione completa (PUT) di uno sprint. |
-| `partial_update_sprints` | — | Aggiornamento parziale (PATCH) di uno sprint (nome, date pianificate, note); **non** per le transizioni di stato. |
-| `destroy_sprints` | — | Elimina uno sprint; solo se PLANNED, altrimenti 409 (va chiuso). |
-| `start_sprints` | — | Transizione PLANNED → ACTIVE; fallisce se un altro sprint del progetto è già ACTIVE. |
-| `close_sprints` | — | Transizione ACTIVE → CLOSED; i task non-DONE vanno a `carry_over_to` o tornano nel backlog se omesso. |
+| Tool | Path param | Purpose |
+|------|-----------|---------|
+| `list_sprints` | — | Lists the sprints of the projects of the user's companies; filters by `state` (PLANNED\|ACTIVE\|CLOSED) and by `project_id` (to narrow to a single project). |
+| `retrieve_sprints` | — | Detail of a sprint by id. |
+| `create_sprints` | — | Creates a sprint (`project_id` in the body); born in PLANNED state. |
+| `update_sprints` | — | Full replacement (PUT) of a sprint. |
+| `partial_update_sprints` | — | Partial update (PATCH) of a sprint (name, planned dates, notes); **not** for state transitions. |
+| `destroy_sprints` | — | Deletes a sprint; only if PLANNED, otherwise 409 (it must be closed). |
+| `start_sprints` | — | PLANNED → ACTIVE transition; fails if another sprint of the project is already ACTIVE. |
+| `close_sprints` | — | ACTIVE → CLOSED transition; non-DONE tasks go to `carry_over_to` or return to the backlog if omitted. |
 
-## Lanes della board sprint
+## Sprint board lanes
 
-| Tool | Path param | Scopo |
-|------|-----------|-------|
-| `list_sprint_lanes` | — | Lista le lane (task → colonna board) di uno sprint. **Passa sempre `sprint_id`**: senza, torna le lane di tutti gli sprint di tutte le company, e non scatta il backfill delle lane mancanti. Accetta anche `task_id`. Vedi `references/collaboration.md`. |
-| `retrieve_sprint_lanes` | — | Dettaglio di una lane per id. |
-| `move_sprint_lanes` | — | Sposta una lane in un'altra colonna (`project_task_status_id`, null = colonna "Incoming"); non muovibile su sprint chiusi. |
+| Tool | Path param | Purpose |
+|------|-----------|---------|
+| `list_sprint_lanes` | — | Lists the lanes (task → board column) of a sprint. **Always pass `sprint_id`**: without it, it returns the lanes of all sprints of all companies, and the backfill of missing lanes does not run. Also accepts `task_id`. See `references/collaboration.md`. |
+| `retrieve_sprint_lanes` | — | Detail of a lane by id. |
+| `move_sprint_lanes` | — | Moves a lane to another column (`project_task_status_id`, null = "Incoming" column); cannot be moved on closed sprints. |
 
-## Ticket
+## Tickets
 
-| Tool | Path param | Scopo |
-|------|-----------|-------|
-| `retrieve_ticketsubmissions` | — | Metadati di intake di un ticket (submitter, widget, data). Il ticket stesso è un Task: per il dettaglio/triage usa i tool task. |
-| `list_ticketcomments` | `submission_id` | Thread dei commenti di un ticket, dal più vecchio. |
-| `retrieve_ticketcomments` | `submission_id` | Dettaglio di un commento ticket per id. |
-| `create_ticketcomments` | `submission_id` | Aggiunge un commento; default `is_internal=true` (solo team) — passa `is_internal=false` per renderlo visibile al cliente. |
-| `destroy_ticketcomments` | `submission_id` | Soft-delete (nasconde) un commento ticket. |
+| Tool | Path param | Purpose |
+|------|-----------|---------|
+| `retrieve_ticketsubmissions` | — | Intake metadata of a ticket (submitter, widget, date). The ticket itself is a Task: for detail/triage use the task tools. |
+| `list_ticketcomments` | `submission_id` | Comment thread of a ticket, oldest first. |
+| `retrieve_ticketcomments` | `submission_id` | Detail of a ticket comment by id. |
+| `create_ticketcomments` | `submission_id` | Adds a comment; default `is_internal=true` (team only) — pass `is_internal=false` to make it visible to the customer. |
+| `destroy_ticketcomments` | `submission_id` | Soft-delete (hides) a ticket comment. |
 
-## Resume entry (piano/fatto giornaliero)
+## Resume entries (daily plan/done)
 
-| Tool | Path param | Scopo |
-|------|-----------|-------|
-| `list_resumeentries` | `company_id` | Lista le resume entry di una company; filtra per `kind` (plan\|done), range date, `user_id`. |
-| `retrieve_resumeentries` | `company_id` | Dettaglio di una resume entry per id. |
-| `create_resumeentries` | `company_id` | Crea una entry (`kind`, `date_from`/`date_to`, `note`, `tasks` collegati opzionali). |
-| `update_resumeentries` | `company_id` | Sostituzione completa (PUT) di una entry. |
-| `partial_update_resumeentries` | `company_id` | Aggiornamento parziale (PATCH) di una entry. |
-| `destroy_resumeentries` | `company_id` | Soft-delete di una entry. |
+| Tool | Path param | Purpose |
+|------|-----------|---------|
+| `list_resumeentries` | `company_id` | Lists the resume entries of a company; filters by `kind` (plan\|done), date range, `user_id`. |
+| `retrieve_resumeentries` | `company_id` | Detail of a resume entry by id. |
+| `create_resumeentries` | `company_id` | Creates an entry (`kind`, `date_from`/`date_to`, `note`, optional linked `tasks`). |
+| `update_resumeentries` | `company_id` | Full replacement (PUT) of an entry. |
+| `partial_update_resumeentries` | `company_id` | Partial update (PATCH) of an entry. |
+| `destroy_resumeentries` | `company_id` | Soft-delete of an entry. |
 
-## Note (second brain / knowledge base)
+## Notes (second brain / knowledge base)
 
-| Tool | Path param | Scopo |
-|------|-----------|-------|
-| `list_notes` | `company_id` | Lista le note di una company; filtra per `project_id` (e `project_id__isnull=true` per le note di company non legate a un progetto) o `title__icontains`, oppure `visibility` (`company`/`private`). Filtri di revisione: `updated_at__lt|lte|gt|gte`, `created_at__lt|lte|gt|gte` (datetime ISO), `tags__text` (es. `inbox`, case-insensitive), `ordering` (`updated_at`, `created_at`, `title`, prefisso `-` per l'inverso; default più recenti per prime). Restituisce solo le note visibili all'utente. Non cerca nel body — per quello usa `search_notes`. |
-| `retrieve_notes` | `company_id` | Dettaglio di una nota per id. |
-| `create_notes` | `company_id` | Crea una nota (`title`, `content` markdown, `project_id` opzionale, `tags` opzionali per id, `source_task` opzionale: id del task da cui la nota è stata promossa, stessa company, `visibility` opzionale: `company` (default) o `private`, visibile solo all'autore). |
-| `update_notes` | `company_id` | Sostituzione completa (PUT) di una nota. |
-| `partial_update_notes` | `company_id` | Aggiornamento parziale (PATCH) di una nota; `visibility` è modificabile solo dall'autore. |
-| `destroy_notes` | `company_id` | Sposta una nota nel cestino (soft-delete, recuperabile con `restore_notes`). Non esiste cancellazione definitiva via MCP. |
-| `trashed_notes` | — (`company_id` nel body) | Note nel cestino che l'utente può vedere (le sue private + le condivise), le più recenti prima, max 100; `project_id` opzionale. |
-| `restore_notes` | `company_id` | Riporta una nota dal cestino alle note attive (le private solo il loro autore). |
-| `history_notes` | `company_id` | Ultime 50 versioni di una nota (`history_id`, data, titolo, contenuto), la più recente prima. |
-| `revert_notes` | `company_id` | Ripristina titolo e contenuto di una versione (`history_id` nel body); il revert è una nuova versione. |
-| `links_notes` | `company_id` | Link in uscita (`[[wikilink]]`, con `resolved`) e backlink di una nota; solo note visibili all'utente. |
-| `search_notes` | — (`company_id` nel body) | Full-text search su `title`+`content` in una company; `project_id` opzionale per restringere a un progetto. Usalo al posto di `list_notes` quando cerchi per contenuto, non per titolo/progetto. Non restituisce le note private altrui. Cerca parole intere, non significati: con pochi risultati riprova con sinonimi e traduzioni. |
-| `search_knowledge` | — (`company_id` nel body) | Full-text search unificata su task (`title`+`description`), commenti dei task e note; `project_id` opzionale. Risultati misti ordinati per rilevanza: `kind` (`task`\|`task_comment`\|`note`), `id`, `snippet`, `project_id`/`task_id`. Ticket esclusi. Default per "dove ne abbiamo parlato?". Parole intere, non semantica: con pochi risultati riprova con sinonimi e traduzioni. |
+| Tool | Path param | Purpose |
+|------|-----------|---------|
+| `list_notes` | `company_id` | Lists the notes of a company; filters by `project_id` (and `project_id__isnull=true` for company notes not tied to a project) or `title__icontains`, or `visibility` (`company`/`private`). Review filters: `updated_at__lt|lte|gt|gte`, `created_at__lt|lte|gt|gte` (ISO datetime), `tags__text` (e.g. `inbox`, case-insensitive), `ordering` (`updated_at`, `created_at`, `title`, `-` prefix for reverse; default most recent first). Returns only the notes visible to the user. It does not search the body — use `search_notes` for that. |
+| `retrieve_notes` | `company_id` | Detail of a note by id. |
+| `create_notes` | `company_id` | Creates a note (`title`, markdown `content`, optional `project_id`, optional `tags` by id, optional `source_task`: id of the task the note was promoted from, same company, optional `visibility`: `company` (default) or `private`, visible only to the author). |
+| `update_notes` | `company_id` | Full replacement (PUT) of a note. |
+| `partial_update_notes` | `company_id` | Partial update (PATCH) of a note; `visibility` can be changed only by the author. |
+| `destroy_notes` | `company_id` | Moves a note to the trash (soft-delete, recoverable with `restore_notes`). There is no permanent deletion via MCP. |
+| `trashed_notes` | — (`company_id` in the body) | Notes in the trash that the user can see (their private ones + the shared ones), most recent first, max 100; optional `project_id`. |
+| `restore_notes` | `company_id` | Brings a note back from the trash to the active notes (private ones only their author). |
+| `history_notes` | `company_id` | Last 50 versions of a note (`history_id`, date, title, content), most recent first. |
+| `revert_notes` | `company_id` | Restores the title and content of a version (`history_id` in the body); the revert is a new version. |
+| `links_notes` | `company_id` | Outgoing links (`[[wikilink]]`, with `resolved`) and backlinks of a note; only notes visible to the user. |
+| `search_notes` | — (`company_id` in the body) | Full-text search on `title`+`content` in a company; optional `project_id` to narrow to a project. Use it instead of `list_notes` when searching by content, not by title/project. It does not return other people's private notes. It searches whole words, not meanings: with few results retry with synonyms and translations. |
+| `search_knowledge` | — (`company_id` in the body) | Unified full-text search across tasks (`title`+`description`), task comments and notes; optional `project_id`. Mixed results ordered by relevance: `kind` (`task`\|`task_comment`\|`note`), `id`, `snippet`, `project_id`/`task_id`. Tickets excluded. Default for "where did we talk about it?" ("dove ne abbiamo parlato?"). Whole words, not semantic: with few results retry with synonyms and translations. |
 
 ---
 
-Per i flussi ad alta frequenza (commenti, allegati, dipendenze, sprint, `list_all_reminders`) con esempi di chiamata, vedi l'indice in [SKILL.md](../SKILL.md). Per ticket/resume entry/tag-CRUD/progetti-CRUD/lanes con esempi, vedi `references/collaboration.md`.
+For the high-frequency flows (comments, attachments, dependencies, sprints, `list_all_reminders`) with call examples, see the index in [SKILL.md](../SKILL.md). For tickets/resume entries/tag-CRUD/project-CRUD/lanes with examples, see `references/collaboration.md`.
 
-## Ritmo (giornata e focus settimanale)
+## Rhythm (day and weekly focus)
 
-Otto tool, vedi [rhythm.md](rhythm.md): `retrieve_current_rhythm`, `today_rhythm`, `set_text_rhythm`, `mark_interpreted_rhythm`, `list_rhythm_items`, `create_rhythm_items`, `partial_update_rhythm_items`, `destroy_rhythm_items`. Non sono inclusi nel conteggio dell'intestazione sopra.
+Eight tools, see [rhythm.md](rhythm.md): `retrieve_current_rhythm`, `today_rhythm`, `set_text_rhythm`, `mark_interpreted_rhythm`, `list_rhythm_items`, `create_rhythm_items`, `partial_update_rhythm_items`, `destroy_rhythm_items`. They are not included in the count in the heading above.
 
-## Guida e novità
+## Guide and news
 
-Due tool, vedi [help-and-releases.md](help-and-releases.md): `help`, `list_release_notes`. Non sono inclusi nel conteggio dell'intestazione sopra.
+Two tools, see [help-and-releases.md](help-and-releases.md): `help`, `list_release_notes`. They are not included in the count in the heading above.

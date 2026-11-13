@@ -1,22 +1,22 @@
-# Dipendenze tra task
+# Task dependencies
 
-← [Indice della skill](../SKILL.md) · Vedi anche: [ordinamento e stime](ordering-and-estimation.md) · [sprint](sprints.md)
+← [Skill index](../SKILL.md) · See also: [ordering and estimation](ordering-and-estimation.md) · [sprints](sprints.md)
 
-Vincoli FS/SS/FF/SF tra task con auto-schedule.
+FS/SS/FF/SF constraints between tasks with auto-schedule.
 
-**Quando serve:** modellare "X non può iniziare finché Y non finisce" (o varianti) per
-pianificazione/Gantt, o capire cosa blocca cosa prima di dire a qualcuno "puoi partire".
+**When needed:** model "X cannot start until Y finishes" (or variants) for
+planning/Gantt, or understand what blocks what before telling someone "you can start".
 
 `list/retrieve/create/update/partial_update/destroy_taskdependencies` (path:
-`company_id` + `project_id`). Ogni dipendenza ha un `predecessor`, un `successor`, un
-`dependency_type` — **FS** (finish-to-start, default: il successor parte dopo che il
-predecessor finisce), **SS** (start-to-start), **FF** (finish-to-finish), **SF**
-(start-to-finish) — e `lag_days` (può essere negativo, sposta il vincolo).
+`company_id` + `project_id`). Each dependency has a `predecessor`, a `successor`, a
+`dependency_type` — **FS** (finish-to-start, default: the successor starts after the
+predecessor finishes), **SS** (start-to-start), **FF** (finish-to-finish), **SF**
+(start-to-finish) — and `lag_days` (can be negative, shifts the constraint).
 
-Creare/aggiornare una dipendenza **ripropaga automaticamente** le date pianificate del
-successor (auto-schedule) se il nuovo vincolo lo richiede. Rifiutata con 400 su
-self-link, dipendenza cross-progetto, relazione antenato/discendente, o se crea un
-ciclo. Cancellare una dipendenza non riporta indietro le date già spostate.
+Creating/updating a dependency **automatically re-propagates** the successor's planned
+dates (auto-schedule) if the new constraint requires it. Rejected with 400 on
+self-link, cross-project dependency, ancestor/descendant relationship, or if it creates a
+cycle. Deleting a dependency does not move back the dates that were already shifted.
 
 ```
 create_taskdependencies(company_id=1, project_id=7, body={
@@ -27,9 +27,9 @@ create_taskdependencies(company_id=1, project_id=7, body={
 })
 ```
 
-Per le dipendenze di un **singolo** task passa `task`: matcha da entrambi i versi —
-sia le dipendenze che lo bloccano, sia quelle che dipendono da lui. Senza, ricevi
-l'intero grafo del progetto.
+For the dependencies of a **single** task pass `task`: it matches in both directions —
+both the dependencies that block it and those that depend on it. Without it, you get the
+whole project graph.
 
 ```
 list_taskdependencies(company_id=1, project_id=7, task=1234)
