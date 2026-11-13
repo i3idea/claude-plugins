@@ -22,7 +22,7 @@ mentions in any language and routes work through the ProWoDo MCP server.
   behavior, mass-tag race conditions) so Claude doesn't trip on them
 
 - Nudges you, once per session, to save durable decisions and gotchas as ProWoDo
-  notes (a `SessionStart` hook; Claude Code only, never saves without a yes)
+  notes (`SessionStart` and `PreCompact` hooks; Claude Code only, never saves without a yes)
 
 ## Install
 
