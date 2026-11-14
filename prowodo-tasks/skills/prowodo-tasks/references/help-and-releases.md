@@ -1,19 +1,19 @@
-# Guida ai tool e novità del prodotto
+# Tool guide and product news
 
-← [Indice della skill](../SKILL.md) · [tool completi](tools.md)
+← [Skill index](../SKILL.md) · [full tools](tools.md)
 
-Due tool di sola lettura, utili soprattutto a chi usa ProWoDo come connector senza questa skill.
+Two read-only tools, useful above all to those who use ProWoDo as a connector without this skill.
 
-| Tool | Scopo |
-|------|-------|
-| `help` | Senza `topic`: introduzione e elenco delle aree (con quanti tool ciascuna). Con `topic` (`tasks`, `notes`, `rhythm`, `sprints`, …): i tool di quell'area con titolo e una frase. L'elenco è generato dal registro MCP, quindi un tool nuovo compare da solo (in `other` finché non ha un'area). Un `topic` sconosciuto dà errore con le aree valide. |
-| `list_release_notes` | Le ultime release di ProWoDo dal feed pubblico, la più recente per prima: `version`, `name`, `released_at`, `short_summary`, `changelog_markdown`. `limit` (1–20, default 5), `since_version` (es. `1.18.0`: solo release più nuove, confronto numerico). |
+| Tool | Purpose |
+|------|---------|
+| `help` | Without `topic`: introduction and list of the areas (with how many tools each). With `topic` (`tasks`, `notes`, `rhythm`, `sprints`, …): the tools of that area with title and one sentence. The list is generated from the MCP registry, so a new tool shows up on its own (under `other` until it has an area). An unknown `topic` gives an error with the valid areas. |
+| `list_release_notes` | The latest ProWoDo releases from the public feed, most recent first: `version`, `name`, `released_at`, `short_summary`, `changelog_markdown`. `limit` (1–20, default 5), `since_version` (e.g. `1.18.0`: only newer releases, numeric comparison). |
 
-Quando usarli:
-- **"Cosa c'è di nuovo in ProWoDo?"** → `list_release_notes`. Se l'utente dice l'ultima versione che conosce, passa `since_version`.
-- **Non sai quale tool usare, o l'utente chiede cosa sai fare** → `help`, poi `help(topic=…)` solo per l'area che serve.
-- **Un tool che ti aspettavi non c'è** → prima `list_release_notes` (potrebbe essere nuovo, o questa skill essere indietro), poi `help`.
+When to use them:
+- **"What's new in ProWoDo?"** ("Cosa c'è di nuovo in ProWoDo?") → `list_release_notes`. If the user says the latest version they know, pass `since_version`.
+- **You do not know which tool to use, or the user asks what you can do** → `help`, then `help(topic=…)` only for the area you need.
+- **A tool you expected is not there** → first `list_release_notes` (it might be new, or this skill might be behind), then `help`.
 
-Cose da sapere:
-- Il feed è pubblico e in cache cinque minuti sul backend. Se non è raggiungibile `list_release_notes` risponde comunque con `results: []`, `feed_available: false` e una `note`: non è un errore dell'utente, riprova più tardi.
-- Il feed ha solo le release pubblicate, senza note tecniche né SHA. Non sostituisce i tool di i3deploy (`list_project_releases`, …), che servono a chi pubblica le release.
+Things to know:
+- The feed is public and cached for five minutes on the backend. If it is unreachable `list_release_notes` still responds with `results: []`, `feed_available: false` and a `note`: it is not a user error, retry later.
+- The feed has only the published releases, without technical notes or SHAs. It does not replace the i3deploy tools (`list_project_releases`, …), which are for those who publish the releases.

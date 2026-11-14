@@ -1,62 +1,62 @@
-# Gotcha tecnici dell'API
+# Technical API gotchas
 
-← [Indice della skill](../SKILL.md) · Vedi anche: [riordino](ordering-and-estimation.md) · [defaults di progetto](project-defaults.md) · [tool completi](tools.md)
+← [Skill index](../SKILL.md) · See also: [reordering](ordering-and-estimation.md) · [project defaults](project-defaults.md) · [full tools](tools.md)
 
-Cose non ovvie dalla descrizione dei tool MCP, verificate sul backend.
+Things not obvious from the MCP tool descriptions, verified on the backend.
 
-Cose che NON sono ovvie dalla descrizione dei tool MCP e ti costano tempo se le scopri sul momento:
+Things that are NOT obvious from the MCP tool descriptions and cost you time if you discover them on the spot:
 
-## `partial_update_tasks` richiede `title` nel body anche per update parziali
+## `partial_update_tasks` requires `title` in the body even for partial updates
 
-Lo schema MCP marca `title` come required nel body anche se stai cambiando solo `order`, `progress`, `is_completed`, o un tag. Se ometti `title`, ricevi un 400. Workaround: passa sempre il title originale (puoi leggerlo prima con `retrieve_tasks` se non lo hai in cache, oppure passalo come parametro se l'hai già).
+The MCP schema marks `title` as required in the body even if you are only changing `order`, `progress`, `is_completed`, or a tag. If you omit `title`, you get a 400. Workaround: always pass the original title (you can read it beforehand with `retrieve_tasks` if you do not have it cached, or pass it as a parameter if you already have it).
 
-## `description` ha cap a 4096 caratteri
+## `description` is capped at 4096 characters
 
-L'API rifiuta description più lunghe con `400 {"description": ["Ensure this field has no more than 4096 characters."]}`. Se devi narrare di più, linka a spec/plan esterni o usa commenti sul task (separati). Splitta sezioni mantenendo gli ancoraggi essenziali.
+The API rejects longer descriptions with `400 {"description": ["Ensure this field has no more than 4096 characters."]}`. If you need to narrate more, link to external specs/plans or use comments on the task (separate). Split sections while keeping the essential anchors.
 
-## Tag orfani da altre company non sono rimovibili
+## Orphan tags from other companies cannot be removed
 
-A volte un task ha un tag con `company` diverso da quella corrente (residuo di refactor passati o errore di assegnazione). `remove_tag_tasks` rifiuta con `"tag not in this company"`. Workaround: lascialo, non bloccare il flusso, eventualmente aggiungi i tag corretti della company corrente sopra. Segnalalo all'utente come "tag orfano da pulire eventualmente lato admin".
+Sometimes a task has a tag with a `company` different from the current one (leftover from past refactors or an assignment error). `remove_tag_tasks` rejects with `"tag not in this company"`. Workaround: leave it, do not block the flow, optionally add the correct tags of the current company on top. Report it to the user as "orphan tag to clean up eventually on the admin side".
 
-## `list_tasks` con `depth=0` e `page_size=100` produce response da 80KB+
+## `list_tasks` with `depth=0` and `page_size=100` produces an 80KB+ response
 
-Su progetti con 50+ task root, la response supera il limit di token MCP e viene salvata in un file temporaneo. Per analizzarla efficacemente, usa `jq` via Bash:
+On projects with 50+ root tasks, the response exceeds the MCP token limit and is saved to a temporary file. To analyze it effectively, use `jq` via Bash:
 
 ```bash
 jq -r '.results | sort_by(.order) | .[] | "\(.order)\t#\(.id)\tsp=\(.story_points // "-")\t\(.title[0:60])"' <file>
 ```
 
-Per uso interattivo (mostrare task all'utente), filtra meglio: `is_completed=false`, `depth=0`, `sprint__isnull=true`, `page_size=25` invece di 100, e paginazione esplicita.
+For interactive use (showing tasks to the user), filter better: `is_completed=false`, `depth=0`, `sprint__isnull=true`, `page_size=25` instead of 100, and explicit pagination.
 
-## Mass tagging / mass reorder: batch in parallelo OK ma con riserve
+## Mass tagging / mass reorder: parallel batches OK but with caveats
 
-Le scritture (`add_tag_tasks`, `partial_update_tasks`) sono safe in parallelo dal tuo lato — la transazione del backend è atomica per chiamata. MA: ogni `partial_update_tasks` rinormalizza gli order del livello → race condition sull'order finale se mandi 50 update in parallelo. Se l'ordine relativo è importante (riordino), serializza. Se invece stai solo taggando (no order change), parallelizza pure.
+Writes (`add_tag_tasks`, `partial_update_tasks`) are safe in parallel on your side — the backend transaction is atomic per call. BUT: every `partial_update_tasks` renormalizes the orders of the level → race condition on the final order if you send 50 updates in parallel. If the relative order matters (reordering), serialize. If instead you are only tagging (no order change), go ahead and parallelize.
 
-## Closing pattern verificato
+## Verified closing pattern
 
-Per chiudere un task non-banale (feature implementata, decisione presa):
+To close a non-trivial task (feature implemented, decision made):
 
 1. `partial_update_tasks`: `is_completed: true, progress: 100, status: "DONE", title: <original>`
-2. Aggiorna description con un breve ✅ Done summary in cima (≤4096 char): cosa è stato fatto, commit SHA principali, link a spec/plan, eventuali follow-up non-MVP esplicitamente fuori scope.
-3. Memoria utente: se il lavoro ha sbloccato pattern riusabili, scrivi memoria type=`reference` o `feedback` linkata al task ID.
+2. Update the description with a short ✅ Done summary at the top (≤4096 chars): what was done, main commit SHAs, links to spec/plan, any non-MVP follow-ups explicitly out of scope.
+3. User memory: if the work unlocked reusable patterns, write a memory of type=`reference` or `feedback` linked to the task ID.
 
 ---
 
-## Progetti archiviati: campo `is_archivied` (sic) — verificato 2026-05-25
+## Archived projects: the `is_archivied` field (sic) — verified 2026-05-25
 
-Il campo è `is_archivied` (typo del backend, non `is_archived`).
+The field is `is_archivied` (backend typo, not `is_archived`).
 
-**`list_projects` filtra di default i progetti archiviati** — quindi se non compaiono nella lista *potrebbe* essere perché sono archiviati, non perché non esistono. Conferma sempre con `retrieve_projects(pk=<id>, company_id=<cid>)` quando un ID atteso non appare nella list.
+**`list_projects` filters out archived projects by default** — so if they do not show up in the list it *might* be because they are archived, not because they do not exist. Always confirm with `retrieve_projects(pk=<id>, company_id=<cid>)` when an expected ID does not appear in the list.
 
-**`retrieve_projects` invece restituisce anche gli archiviati** — utile per ispezione, pericoloso se non si controlla il campo `is_archivied` prima di scriverci task.
+**`retrieve_projects` instead also returns archived ones** — useful for inspection, dangerous if you do not check the `is_archivied` field before writing tasks into it.
 
-**`create_tasks` NON valida `is_archivied`**: puoi creare un task in un progetto archiviato senza nessun errore lato backend (verificato — task #1455 creato in Higher Level (5) archiviato senza warning).
+**`create_tasks` does NOT validate `is_archivied`**: you can create a task in an archived project with no backend error (verified — task #1455 created in the archived Higher Level (5) without a warning).
 
-**Regole operative:**
-- Quando salvi un **default in memoria** o stai per scrivere su un progetto noto solo per ID (es. da `prowodo_defaults.md`), fai un `retrieve_projects` rapido e verifica `is_archivied: false`. I default in memoria invecchiano — un progetto attivo ieri può essere archiviato oggi.
-- Se un default risulta archiviato, **avvisa l'utente** e chiedi un'alternativa attiva (di solito il team ha consolidato il lavoro altrove). Aggiorna la memoria.
-- Se l'utente cita un progetto per nome che non appare in `list_projects`, fai un `retrieve_projects` per id (se lo conosci) o segnala "non trovato tra gli attivi, potrebbe essere archiviato".
+**Operating rules:**
+- When you save a **default in memory** or are about to write to a project known only by ID (e.g. from `prowodo_defaults.md`), do a quick `retrieve_projects` and verify `is_archivied: false`. Defaults in memory age — a project that was active yesterday may be archived today.
+- If a default turns out to be archived, **warn the user** and ask for an active alternative (usually the team has consolidated the work elsewhere). Update the memory.
+- If the user cites a project by name that does not appear in `list_projects`, do a `retrieve_projects` by id (if you know it) or report "not found among the active ones, it might be archived".
 
-## `move_to_project_tasks`: come si usa
+## `move_to_project_tasks`: how to use it
 
-Per spostare un task in un altro progetto (anche di un'altra company) chiama `move_to_project_tasks` con `pk=<task_id>` e `body={"project_id": <target_project_id>, "company_id": <target_company_id>}`. Lo schema MCP accetta entrambi i campi nel body — il task mantiene ID e passa al nuovo progetto/company. Non serve ricrearlo né cancellare l'originale.
+To move a task to another project (even of another company) call `move_to_project_tasks` with `pk=<task_id>` and `body={"project_id": <target_project_id>, "company_id": <target_company_id>}`. The MCP schema accepts both fields in the body — the task keeps its ID and moves to the new project/company. There is no need to recreate it or delete the original.

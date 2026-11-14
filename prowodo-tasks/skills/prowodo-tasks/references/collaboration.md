@@ -1,142 +1,142 @@
-# Famiglie a bassa frequenza
+# Low-frequency families
 
-← [Indice della skill](../SKILL.md) · Vedi anche: [tool completi](tools.md) · [sprint](sprints.md) · [commenti](comments.md)
+← [Skill index](../SKILL.md) · See also: [full tools](tools.md) · [sprints](sprints.md) · [comments](comments.md)
 
-Queste famiglie di tool si usano meno spesso del flusso base task/sprint — per questo
-sono qui e non in `SKILL.md`: non serve caricarle in ogni sessione. Per l'elenco
-completo di tutti i tool con path param e scopo, vedi [tools.md](tools.md). Per i
-nomi nudi vs il prefisso reale del tool MCP, vedi [SKILL.md](../SKILL.md).
+These tool families are used less often than the base task/sprint flow — that is why
+they are here and not in `SKILL.md`: there is no need to load them in every session. For
+the complete list of all tools with path params and purpose, see [tools.md](tools.md). For
+bare names vs the real prefix of the MCP tool, see [SKILL.md](../SKILL.md).
 
-## Ticket
+## Tickets
 
-**Quando serve:** l'utente chiede di leggere/gestire ticket clienti (widget di supporto
-sul sito), o di rispondere a chi ha aperto un ticket. Un ticket **è un Task** con una
-`TicketSubmission` collegata — per triage, stato, assegnazione usa i tool task normali
-(`list_tasks` con `has_ticket=true`, `partial_update_tasks`, `assign_user_tasks`); questa
-famiglia copre solo l'intake e i commenti specifici del ticket.
+**When needed:** the user asks to read/manage customer tickets (support widget
+on the website), or to reply to whoever opened a ticket. A ticket **is a Task** with a linked
+`TicketSubmission` — for triage, status, assignment use the normal task tools
+(`list_tasks` with `has_ticket=true`, `partial_update_tasks`, `assign_user_tasks`); this
+family covers only intake and the ticket-specific comments.
 
-- `retrieve_ticketsubmissions` — metadati di apertura: chi ha aperto il ticket
-  (submitter), da quale widget, quando. **Non** contiene stato/assegnatario/testo del
-  ticket: quelli sono sul Task collegato (`retrieve_tasks`).
-- `list_ticketcomments` / `retrieve_ticketcomments` — thread dei commenti sul ticket
-  (path: `submission_id`), dal più vecchio.
-- `create_ticketcomments` — aggiunge un commento (path: `submission_id`). **Il flag
-  `is_internal` decide chi lo vede:** default `true` (nota interna, solo team, il
-  cliente non la vede mai); `is_internal=false` lo rende visibile sulla pagina pubblica
-  del ticket. **Scrivi come interno per default e rendi pubblico solo di proposito** —
-  è il verso opposto di sbagliare che conta: una nota interna che scappa fuori come
-  pubblica espone dettagli non destinati al cliente.
-- `destroy_ticketcomments` — soft-delete (nasconde) un commento, non cancellazione fisica.
+- `retrieve_ticketsubmissions` — opening metadata: who opened the ticket
+  (submitter), from which widget, when. It does **not** contain the ticket's status/assignee/text:
+  those are on the linked Task (`retrieve_tasks`).
+- `list_ticketcomments` / `retrieve_ticketcomments` — thread of comments on the ticket
+  (path: `submission_id`), oldest first.
+- `create_ticketcomments` — adds a comment (path: `submission_id`). **The `is_internal`
+  flag decides who sees it:** default `true` (internal note, team only, the
+  customer never sees it); `is_internal=false` makes it visible on the ticket's public
+  page. **Write as internal by default and make public only on purpose** —
+  it is the opposite direction of error that matters: an internal note that leaks out
+  as public exposes details not meant for the customer.
+- `destroy_ticketcomments` — soft-delete (hides) a comment, not a physical deletion.
 
-**I due link, da non confondere** (vedi anche "Link alla piattaforma" in [SKILL.md](../SKILL.md#link-alla-piattaforma)):
-`app_url` su ticket submission/commenti è INTERNO (drawer del task nel team); `public_url`
-su `retrieve_ticketsubmissions` è PUBBLICO, la pagina che vede chi ha aperto il ticket.
-Non dare mai `app_url` al cliente.
+**The two links, not to be confused** (see also "Platform links" in [SKILL.md](../SKILL.md#platform-links)):
+`app_url` on ticket submissions/comments is INTERNAL (the task drawer within the team); `public_url`
+on `retrieve_ticketsubmissions` is PUBLIC, the page seen by whoever opened the ticket.
+Never give `app_url` to the customer.
 
-Esempio — rispondere pubblicamente a un ticket:
+Example — replying publicly to a ticket:
 ```
 retrieve_ticketsubmissions(pk=88)
   → {..., "public_url": "https://app.prowodo.com/t/9c2e..."}
 create_ticketcomments(submission_id=88, body={
-  "text": "Risolto: abbiamo pubblicato il fix in produzione.",
+  "text": "Resolved: we have published the fix to production.",
   "is_internal": false
 })
 ```
-Dopo, se serve, condividi `public_url` col cliente — mai `app_url`.
+Afterwards, if needed, share `public_url` with the customer — never `app_url`.
 
-## Resume entry (piano/fatto giornaliero)
+## Resume entries (daily plan/done)
 
-**Quando serve:** stand-up asincroni, "cosa hanno fatto/pianificato oggi i miei
-colleghi", o per registrare tu stesso cosa hai pianificato/fatto in un giorno o in un
-range — separato dai task veri e propri, è una nota di riepilogo eventualmente
-collegata a uno o più task.
+**When needed:** asynchronous stand-ups, "what did/are my colleagues planning
+today", or to record yourself what you planned/did on a day or over a
+range — separate from the actual tasks, it is a summary note optionally
+linked to one or more tasks.
 
-- `list_resumeentries` (path: `company_id`) — filtra per `kind` (`plan`|`done`), range
+- `list_resumeentries` (path: `company_id`) — filter by `kind` (`plan`|`done`), range
   `date_from`/`date_to`, `user_id`.
-- `retrieve_resumeentries` — dettaglio per id.
-- `create_resumeentries` — `kind`, `date_from`/`date_to`, `note` (testo libero), `tasks`
-  opzionale (lista di id collegati). Più entry nello stesso giorno sono ammesse.
-- `update_resumeentries` / `partial_update_resumeentries` — sostituzione completa o
-  parziale.
+- `retrieve_resumeentries` — detail by id.
+- `create_resumeentries` — `kind`, `date_from`/`date_to`, `note` (free text), `tasks`
+  optional (list of linked ids). Multiple entries on the same day are allowed.
+- `update_resumeentries` / `partial_update_resumeentries` — full or
+  partial replacement.
 - `destroy_resumeentries` — soft-delete.
 
-Esempio — registrare cosa è stato fatto oggi:
+Example — recording what was done today:
 ```
 create_resumeentries(company_id=1, body={
   "kind": "done",
   "date_from": "2026-08-05",
   "date_to": "2026-08-05",
-  "note": "Chiuso il fix sugli allegati, avviato lo spike sui reminder Telegram.",
+  "note": "Closed the attachments fix, started the spike on Telegram reminders.",
   "tasks": [1234, 1240]
 })
 ```
 
-## CRUD tag oltre add_tag / remove_tag
+## Tag CRUD beyond add_tag / remove_tag
 
-`add_tag_tasks` / `remove_tag_tasks` (in `SKILL.md`) attaccano/staccano un tag
-**esistente** a un task. Questa famiglia gestisce i tag stessi come entità della
-company — serve quando l'utente vuole **creare, rinominare o eliminare** un tag (non
-solo applicarlo), tipicamente in fase di setup di un progetto o di pulizia del backlog.
+`add_tag_tasks` / `remove_tag_tasks` (in `SKILL.md`) attach/detach an **existing**
+tag to/from a task. This family manages the tags themselves as entities of the
+company — needed when the user wants to **create, rename or delete** a tag (not
+just apply it), typically when setting up a project or cleaning up the backlog.
 
-- `list_tasktags` / `retrieve_tasktags` (path: `company_id`) — elenco/dettaglio dei tag
-  definiti nella company.
-- `create_tasktags` — crea un tag (`text`); da qui in poi è disponibile per
-  `add_tag_tasks`. Nota: `add_tag_tasks` può crearlo al volo passando `text` invece di
-  `id` — usa `create_tasktags` esplicito solo se vuoi il tag pronto prima di taggare, o
-  se lo stai creando senza ancora attaccarlo a nulla.
-- `update_tasktags` / `partial_update_tasktags` — rinomina o aggiorna un tag esistente;
-  il cambio si riflette su tutti i task che lo usano (è lo stesso record).
-- `destroy_tasktags` — elimina il tag dalla company; i task che lo avevano perdono
-  l'associazione (non vengono toccati altrimenti).
+- `list_tasktags` / `retrieve_tasktags` (path: `company_id`) — list/detail of the tags
+  defined in the company.
+- `create_tasktags` — creates a tag (`text`); from then on it is available for
+  `add_tag_tasks`. Note: `add_tag_tasks` can create it on the fly by passing `text` instead of
+  `id` — use an explicit `create_tasktags` only if you want the tag ready before tagging, or
+  if you are creating it without attaching it to anything yet.
+- `update_tasktags` / `partial_update_tasktags` — renames or updates an existing tag;
+  the change is reflected on all the tasks that use it (it is the same record).
+- `destroy_tasktags` — deletes the tag from the company; tasks that had it lose
+  the association (they are not otherwise touched).
 
-Esempio — rinominare un tag:
+Example — renaming a tag:
 ```
 list_tasktags(company_id=1)
   → [{id: 12, text: "gtm"}, ...]
 partial_update_tasktags(company_id=1, pk=12, body={"text": "go-to-market"})
 ```
 
-## CRUD progetti
+## Project CRUD
 
 `create_projects` / `update_projects` / `partial_update_projects` / `destroy_projects`
-(path: `company_id`) — CRUD completo sui progetti stessi, non sui task al loro
-interno. Usali quando l'utente vuole **creare un nuovo progetto**, rinominarlo, o
-archiviarlo — flusso raro rispetto al lavoro quotidiano sui task, ma diretto: niente
-soft-delete a metà, `destroy_projects` archivia (`is_archivied=true`), non cancella.
+(path: `company_id`) — full CRUD on the projects themselves, not on the tasks inside
+them. Use them when the user wants to **create a new project**, rename it, or
+archive it — a rare flow compared to the daily work on tasks, but direct: no
+half-way soft-delete, `destroy_projects` archives (`is_archivied=true`), it does not delete.
 
-Vedi anche in [gotchas.md](gotchas.md) la sezione sul campo `is_archivied` (sic) — vale anche per i
-progetti creati/modificati con questi tool: verifica sempre `is_archivied: false` prima
-di proporli come destinazione.
+See also the section on the `is_archivied` field (sic) in [gotchas.md](gotchas.md) — it also applies to
+projects created/modified with these tools: always check `is_archivied: false` before
+suggesting them as a destination.
 
-Esempio — creare un progetto:
+Example — creating a project:
 ```
 create_projects(company_id=1, body={
-  "title": "Redesign sito marketing",
-  "description": "Rifacimento landing + blog"
+  "title": "Marketing site redesign",
+  "description": "Landing + blog rebuild"
 })
 ```
 
-## Lanes della board sprint
+## Sprint board lanes
 
-**Quando serve:** l'utente chiede della **board kanban dello sprint attivo** (colonne
-tipo "Da fare / In corso / Fatto") e non solo di "che task ci sono nello sprint" — la
-lista task (`list_tasks(sprint=<id>)`) non dice in quale colonna sta un task, le lanes
-sì.
+**When needed:** the user asks about the **kanban board of the active sprint** (columns
+like "To do / In progress / Done") and not just "what tasks are in the sprint" — the
+task list (`list_tasks(sprint=<id>)`) does not say which column a task is in, the lanes
+do.
 
-- `list_sprint_lanes` — **passa sempre `sprint_id`.** Senza, la chiamata ritorna le
-  lane di *tutti* gli sprint di *tutte* le company dell'utente, e ti ritrovi a
-  guardare board diverse mescolate credendo di vederne una. Con `sprint_id` scatta
-  anche il backfill delle lane mancanti per i task già nello sprint (dati legacy
-  entrati prima delle lane), quindi il risultato è completo — senza filtro quel
-  backfill non parte e mancano righe. Accetta anche `task_id` per isolare una lane
-  singola.
-- `retrieve_sprint_lanes` — dettaglio di una lane per id: quale task, quale colonna.
-- `move_sprint_lanes` — sposta una lane in un'altra colonna
-  (`project_task_status_id`, l'id della colonna target — deve appartenere al progetto
-  dello sprint della lane); `null` la parcheggia nella colonna sintetica "Incoming".
-  Non funziona su sprint chiusi.
+- `list_sprint_lanes` — **always pass `sprint_id`.** Without it, the call returns the
+  lanes of *all* sprints of *all* the user's companies, and you end up
+  looking at different boards mixed together believing you are seeing one. With `sprint_id` the
+  backfill of the missing lanes also kicks in for tasks already in the sprint (legacy data
+  that entered before lanes existed), so the result is complete — without the filter that
+  backfill does not run and rows are missing. It also accepts `task_id` to isolate a single
+  lane.
+- `retrieve_sprint_lanes` — detail of a lane by id: which task, which column.
+- `move_sprint_lanes` — moves a lane to another column
+  (`project_task_status_id`, the id of the target column — it must belong to the project
+  of the lane's sprint); `null` parks it in the synthetic "Incoming" column.
+  It does not work on closed sprints.
 
-Esempio — spostare un task in "In corso" sulla board (sprint 44):
+Example — moving a task to "In progress" on the board (sprint 44):
 ```
 list_sprint_lanes(sprint_id=44)
   → [{id: 501, sprint_id: 44, task_id: 1234, project_task_status_id: null}, ...]
